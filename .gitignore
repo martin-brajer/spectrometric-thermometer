@@ -5,11 +5,6 @@
 
 # My files.
 TODO.txt
-!bin\Debug\Data\Spectrum.dat
-!bin\Debug\Config.cfg
-!bin\Debug\Calib_identity.clb
-!bin\Debug\GaAs (Maya).clb
-!bin\Debug\GaP (USB2000+).clb
 
 # User-specific files
 *.rsuser
