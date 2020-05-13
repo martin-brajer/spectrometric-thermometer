@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form_main));
             this.pnlSettings = new System.Windows.Forms.Panel();
             this.cBoxSpect = new System.Windows.Forms.ComboBox();
             this.chBoxAdaptation = new System.Windows.Forms.CheckBox();
@@ -672,7 +671,7 @@
             this.Name = "Form_main";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "spectrometric_thermometer";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form_main_FormClosed);
             this.Load += new System.EventHandler(this.Form_main_Load);
             this.SizeChanged += new System.EventHandler(this.Form_main_SizeChanged);
             this.pnlSettings.ResumeLayout(false);

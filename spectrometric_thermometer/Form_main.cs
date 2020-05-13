@@ -544,7 +544,7 @@ namespace spectrometric_thermometer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        private void Form_main_FormClosed(object sender, FormClosedEventArgs e)
         {
             DAC.Close();
             ADC.Close();
