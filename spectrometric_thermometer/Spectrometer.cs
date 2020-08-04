@@ -4,6 +4,44 @@ using System.Linq;
 
 namespace spectrometric_thermometer
 {
+    public interface ISpectrometer
+    {
+        event EventHandler<Spectrometer.ExposureFinishedEventArgs> ExposureFinished;
+        double[] Wavelengths { get; }
+        float[] Intensities { get; }
+        DateTime Time { get; }
+        string ModelName { get; }
+        string SerialNo { get; }
+        float ExposureTime { get; }
+        float MaxExposureTimeUser { get; }
+        float MaxExposureTime { get; }
+        float MinExposureTime { get; }
+        float Period { get; }
+        bool UseAdaptation { get; set; }
+        int NumberOfDevicesFound { get; }
+        void SearchDevices();
+        void EraceDeviceList();
+        void SelectDevice(int index);
+        void SelectDevice();
+        bool IsSelected();
+        void Open();
+        bool IsOpen();
+        void Close();
+        void ParameterCheck(
+            string tBoxPeriod,
+            string tBoxExpTime,
+            bool chBoxAdaptation,
+            string tBoxAdaptation);
+        void StartExposure();
+        void CancelExposure();
+        bool CheckDeviceRemoved();
+        string Status();
+        bool StatusIsTakingSpectrum();
+        void SaveSpectrum();
+        bool DisconnectDevice();
+        void Dispose();
+    }
+
     /// <summary>
     /// Representss the base class for the classes
     /// that mediate specific spectrometer devices
@@ -11,7 +49,7 @@ namespace spectrometric_thermometer
     /// <para>The class uses seconds as time unit.</para>
     /// <para>Instantiate subclasses via <see cref="Factory"/>.</para>
     /// </summary>
-    public abstract partial class Spectrometer : IDisposable
+    public abstract partial class Spectrometer : ISpectrometer, IDisposable
     {
         // Saturation intensity used in ExposureTimeAdaptation.
         protected float saturationLevel = 0f;
@@ -274,7 +312,7 @@ namespace spectrometric_thermometer
         /// Initial exposure time shall never be exceeded.
         /// </summary>
         /// <returns>Was exposure time altered?</returns>
-        public bool ExposureTimeAdaptation()
+        private bool ExposureTimeAdaptation()
         {
             float exposureTime = ExposureTime;
             float maxInt = Intensities.Max();
