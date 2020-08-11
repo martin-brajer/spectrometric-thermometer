@@ -316,7 +316,7 @@ namespace spectrometric_thermometer
     /// <para>Used for Eurotherm voltage readout,
     /// LED control and switch state tracking.</para>
     /// </summary>
-    class AnalogToDigitalConverter_switcher : SerialPortConverter
+    public class AnalogToDigitalConverter_switcher : SerialPortConverter
     {
         /// <summary>
         /// Search through ports for ADC.

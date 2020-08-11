@@ -7,7 +7,7 @@ namespace spectrometric_thermometer
     /// <summary>
     /// PID.
     /// </summary>
-    class PIDController
+    public class PIDController
     {
         private double P, I, D;
         private double setPoint;

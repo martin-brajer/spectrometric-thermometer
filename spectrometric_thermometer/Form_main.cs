@@ -22,49 +22,15 @@ namespace spectrometric_thermometer
         // Plug-ins.
         private CompositionContainer _container;
 
+        //[Import(typeof(ISpectrometricThermometer))]
+        public ISpectrometricThermometer spectrometricThermometer;
+
         // General.
-        /// <summary>
-        /// First line printed by My_msg().
-        /// </summary>
-        private const string InitLine = "Spectrometric Thermometer (version 3.5)";
 
         /// <summary>
         /// Default size of the Form.
         /// </summary>
         private readonly Size defaultSize = new Size(width: 929, height: 743);
-
-        /// <summary>
-        /// Delimiter used in WriteColumns() and ConfigurationFileLoad().
-        /// </summary>
-        private readonly string delimiter = "    ";
-
-        /// <summary>
-        /// Filled in BtnInit_Click() => InitState.Initialize.
-        /// If no spectrometer chosen => null.
-        /// </summary>
-        private ISpectrometer spectrometer = null;
-
-        /// <summary>
-        /// List of Calibrations as found in "Config.cfg".
-        /// </summary>
-        private List<ICalibration> calibrations = new List<ICalibration>();
-
-        /// <summary>
-        /// Start spectrometer exposure.
-        /// </summary>
-        private Timer timerSpectra = new Timer();
-        /// <summary>
-        /// PID control.
-        /// </summary>
-        private Timer timerPID = new Timer();
-        /// <summary>
-        /// This program to Eurotherm switching.
-        /// </summary>
-        private Timer timerSwitch = new Timer();
-        /// <summary>
-        /// The first waiting time is short and without measuring.
-        /// </summary>
-        private bool firstWait = true;
 
         // Controls.
         /// <summary>
@@ -79,15 +45,7 @@ namespace spectrometric_thermometer
         /// True = measuring, False = setting.
         /// </summary>
         private bool measuringState = false;
-        private readonly string[] initText = { "&Initialize", "Choose dev&ice", "Disc&onnect" };
-        private readonly string[] measText = { "&Measure", "S&top" };
-        private readonly string[] switchText = { "Pr&epare to switch", "Ab&ort" };
-
-        /// <summary>
-        /// Single measurement data.
-        /// </summary>
-        private Measurement measurement = new Measurement();
-
+        
         /// <summary>
         /// Time of the first measurement (press of the Measure button).
         /// From this time, seconds are counted.
@@ -112,37 +70,7 @@ namespace spectrometric_thermometer
         // Plotting.
         private ScottPlot.Plot plt1;
         private ScottPlot.Plot plt2;
-        private const string fig1LabelY = "Intensity(a.u.)";
-        private const string fig1Title = "Spectrum";
 
-        // Analyze.
-        /// <summary>
-        /// List of temperatures calculated by Analyze().
-        /// Shown in fig2.
-        /// </summary>
-        private List<double> temperatures = new List<double>();
-        /// <summary>
-        /// List of time points in seconds calculated by Analyze().
-        /// </summary>
-        private List<double> times = new List<double>();
-
-        /// <summary>
-        /// Digital to analog converter.
-        /// Heater control.
-        /// </summary>
-        private DigitalToAnalogConverter DAC = null;
-        /// <summary>
-        /// Analog to digital converter.
-        /// Eurotherm readout.
-        /// </summary>
-        private AnalogToDigitalConverter_switcher ADC;
-
-        /// <summary>
-        /// PID
-        /// </summary>
-        private PIDController PID = new PIDController(
-            bufferLen: 3,
-            period: 4.5);
 
         /// <summary>
         /// Temperature control mode.
@@ -162,6 +90,9 @@ namespace spectrometric_thermometer
         public Form_main()
         {
             InitializeComponent();
+
+            // Set Msg method pointer.
+            spectrometricThermometer = new SpectrometricThermometer(this.My_msg);
 
             // Plug-in MEF init.
             // An aggregate catalog that combines multiple catalogs.
@@ -238,19 +169,32 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void Form_main_Load(object sender, EventArgs e)
         {
+            // See https://docs.microsoft.com/en-us/dotnet/framework/mef/.
+            var p = new Form_main();
+
+            {
+                TextBox[] textBoxes = pnl2.Controls.OfType<TextBox>().ToArray();
+                for (int i = 0; i < textBoxes.Length; i++)
+                {
+                    textBoxes[i].TextChanged += Pln2_textBoxes_TextChanged;
+                }
+            }
+
+            spectrometricThermometer.PidUpdated += SpectrometricThermometer_PidUpdated;
+
             // Change MsgBox language from CZ to ENG.
             System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en-GB");
             // Change language from CZ to ENG (decimal point).
             System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-GB");
 
             // Buttons.text which can change.
-            btnInit.Text = initText[0];
-            btnMeas.Text = measText[0];
-            btnSwitch.Text = switchText[0];
+            btnInit.Text = Constants.InitText[0];
+            btnMeas.Text = Constants.MeasText[0];
+            btnSwitch.Text = Constants.SwitchText[0];
             lblInfo.Text = "";
 
             // Log message box first line.
-            My_msg(InitLine, newline: false);
+            My_msg(Constants.InitLine, newline: false);
 
             // ComboBox initialization.
             {
@@ -259,7 +203,7 @@ namespace spectrometric_thermometer
             }
 
             // Plotting.
-            plt1 = Figs_Initialize(formsPlot1, fig1Title, "Wavelength (nm)", fig1LabelY);
+            plt1 = Figs_Initialize(formsPlot1, Constants.Fig1Title, "Wavelength (nm)", Constants.Fig1LabelY);
             plt2 = Figs_Initialize(formsPlot2, "T = ? °C", "Time (sec)", "Temperature (°C)");
             formsPlot1.MouseClicked += FormsPlot1_MouseClicked;
 
@@ -267,16 +211,7 @@ namespace spectrometric_thermometer
             ConfigurationFile_Load();
             save = chBoxSave.Checked;
 
-            // Event handler inicialization.
-            timerSpectra.Tick += new EventHandler(TimerSpectra_Tick);
-
-            timerPID.Tick += new EventHandler(TimerPID_Tick);
-            timerPID.Interval = (int)(PID.Period * 1000);
-
-            timerSwitch.Tick += new EventHandler(TimerSwitch_Tick);
-            timerSwitch.Interval = 1000;  // 1 sec.
-
-            measurement.AveragingFinished += Measurement_AveragingFinished;
+            spectrometricThermometer.Measurement.AveragingFinished += Measurement_AveragingFinished;
 
             // DAC.
             try
@@ -311,6 +246,39 @@ namespace spectrometric_thermometer
             this.CenterToScreen();
         }
 
+        private void SpectrometricThermometer_PidUpdated(object sender, SpectrometricThermometer.PidUpdatedEventArgs e)
+        {
+            tBoxVoltage.Text = e.Voltage;
+            lblInfo.Text = e.Info;
+        }
+
+        /// <summary>
+        /// Any TextBox in Pln2 changed its text field.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Pln2_textBoxes_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                PID.ParametersCheck(
+                    sP: tBoxP.Text,
+                    sI: tBoxI.Text,
+                    sD: tBoxD.Text,
+                    sSetPoint: tBoxSP.Text,
+                    sRamp: tBoxRamp.Text,
+                    vDeltaAbsMax: tBoxVChange.Text,
+                    bufferLength: tBoxPIDAverage.Text);
+            }
+            catch (ArgumentException ex)
+            {
+                // Uncheck induces CheckChanged event!
+                chBoxPID.Checked = false;
+                My_msg(ex.Message);
+                return;
+            }
+        }
+
         /// <summary>
         /// Print wavelength on left-mouse click.
         /// Recalculate absorption edge on ctrl-click.
@@ -325,7 +293,7 @@ namespace spectrometric_thermometer
             if (ModifierKeys.HasFlag(Keys.Control))
             {
                 // If clicked at app start.
-                if (measurement.Wavelengths == null)
+                if (spectrometricThermometer.Measurement.Wavelengths == null)
                     return;
                 AnalyzeMeasurement(clickedWavelength);
                 PlotData();
@@ -379,7 +347,7 @@ namespace spectrometric_thermometer
                     // instantiate the respective Spectrometer class.
                     try
                     {
-                        spectrometer = Spectrometer.Factory.Create(cBoxSpect.SelectedIndex);
+                        spectrometricThermometer.Spectrometer = Spectrometer.Factory.Create(cBoxSpect.SelectedIndex);
                     }
                     catch (DllNotFoundException ex)
                     {
@@ -388,11 +356,11 @@ namespace spectrometric_thermometer
                     }
 
                     // ExposureFinished event.
-                    spectrometer.ExposureFinished += new EventHandler<Spectrometer.ExposureFinishedEventArgs>(Spectrometer_ExposureFinished);
+                    spectrometricThermometer.Spectrometer.ExposureFinished += new EventHandler<Spectrometer.ExposureFinishedEventArgs>(Spectrometer_ExposureFinished);
 
                     // Use the choosen spectrometer class to search for devices.
-                    spectrometer.SearchDevices();
-                    if (spectrometer.NumberOfDevicesFound == 0)
+                    spectrometricThermometer.Spectrometer.SearchDevices();
+                    if (spectrometricThermometer.Spectrometer.NumberOfDevicesFound == 0)
                     {
                         My_msg("No spectrometer found.");
                         // initState remains the same.
@@ -400,12 +368,12 @@ namespace spectrometric_thermometer
                     else
                     {
                         My_msg("Spectrometers found:");
-                        for (int deviceIndex = 0; (deviceIndex <= (spectrometer.NumberOfDevicesFound - 1)); deviceIndex++)
+                        for (int deviceIndex = 0; (deviceIndex <= (spectrometricThermometer.Spectrometer.NumberOfDevicesFound - 1)); deviceIndex++)
                         {
-                            spectrometer.SelectDevice(deviceIndex);
-                            My_msg("  " + deviceIndex + "... " + spectrometer.ModelName + " : " + spectrometer.SerialNo);
+                            spectrometricThermometer.Spectrometer.SelectDevice(deviceIndex);
+                            My_msg("  " + deviceIndex + "... " + spectrometricThermometer.Spectrometer.ModelName + " : " + spectrometricThermometer.Spectrometer.SerialNo);
                         }
-                        spectrometer.SelectDevice();
+                        spectrometricThermometer.Spectrometer.SelectDevice();
                         initializationState = InitState.Select_spectrometer;
                         cBoxSpect.Enabled = false;
                     }
@@ -421,7 +389,7 @@ namespace spectrometric_thermometer
 
                     try
                     {
-                        spectrometer.SelectDevice(choosenDevice);
+                        spectrometricThermometer.Spectrometer.SelectDevice(choosenDevice);
                     }
                     catch (IndexOutOfRangeException ex)
                     {
@@ -429,12 +397,12 @@ namespace spectrometric_thermometer
                         return;
                     }
 
-                    spectrometer.EraceDeviceList();
-                    spectrometer.Open();
-                    My_msg("Openning " + spectrometer.ModelName + " : " + spectrometer.SerialNo);
+                    spectrometricThermometer.Spectrometer.EraceDeviceList();
+                    spectrometricThermometer.Spectrometer.Open();
+                    My_msg("Openning " + spectrometricThermometer.Spectrometer.ModelName + " : " + spectrometricThermometer.Spectrometer.SerialNo);
 
-                    tBoxExpTime.Text = string.Format("{0:0.0}", spectrometer.ExposureTime.ToString());
-                    tBoxPeriod.Text = string.Format("{0:0.0}", spectrometer.Period.ToString());
+                    tBoxExpTime.Text = string.Format("{0:0.0}", spectrometricThermometer.Spectrometer.ExposureTime.ToString());
+                    tBoxPeriod.Text = string.Format("{0:0.0}", spectrometricThermometer.Spectrometer.Period.ToString());
                     // If adaptive exposure time enabled, show actual exposure time in lblExpTo.
                     if ((tBoxAdaptation.Text == "") && chBoxAdaptation.Checked)  // Empty and allowed.
                     {
@@ -458,7 +426,7 @@ namespace spectrometric_thermometer
                 default:
                     break;
             }
-            btnInit.Text = initText[(int)initializationState];  // Button text.
+            btnInit.Text = Constants.InitText[(int)initializationState];  // Button text.
         }
 
         /// <summary>
@@ -480,7 +448,7 @@ namespace spectrometric_thermometer
             {
                 try
                 {
-                    spectrometer.ParameterCheck(
+                    spectrometricThermometer.Spectrometer.ParameterCheck(
                         tBoxPeriod: tBoxPeriod.Text,
                         tBoxExpTime: tBoxExpTime.Text,
                         chBoxAdaptation: chBoxAdaptation.Checked,
@@ -498,24 +466,24 @@ namespace spectrometric_thermometer
                     return;
                 }
 
-                if (!times.Any())  // Is empty?
+                if (!spectrometricThermometer.Times.Any())  // Is empty?
                 {
                     timeZero = DateTime.Now;
                 }
-                measurement.IndexMax1D = -1;  // Reset.
+                spectrometricThermometer.Measurement.IndexMax1D = -1;  // Reset.
 
 
                 My_msg("Parameters set & measuring");
-                if (measurement.SpectraToLoad > 1)
+                if (spectrometricThermometer.Measurement.SpectraToLoad > 1)
                 {
-                    float time = spectrometer.Period * measurement.SpectraToLoad;
+                    float time = spectrometricThermometer.Spectrometer.Period * spectrometricThermometer.Measurement.SpectraToLoad;
                     My_msg("Spectrum saved every " + time.ToString() + " s.");
                 }
                 //LabelBold(lblSetExp, false);  // Exposure.
 
                 firstWait = true;
-                timerSpectra.Interval = (int)((spectrometer.Period - spectrometer.ExposureTime) * 1000);
-                timerSpectra.Start();
+                timerMeasure.Interval = (int)((spectrometricThermometer.Spectrometer.Period - spectrometricThermometer.Spectrometer.ExposureTime) * 1000);
+                timerMeasure.Start();
             }
             else
             {
@@ -525,16 +493,16 @@ namespace spectrometric_thermometer
                 LabelBold(lblAdaptation, false);  // Stop.
                 LabelBold(lblAverage, false);  // Stop.
 
-                timerSpectra.Stop();
+                timerMeasure.Stop();
 
-                spectrometer.CancelExposure();
+                spectrometricThermometer.Spectrometer.CancelExposure();
                 // No regulation without new data.
                 chBoxPID.Checked = false;
             }
 
             measuringState = !measuringState;  // Switch.
             pnlSettings.Enabled = !measuringState;  // Disable settings while measuring.
-            btnMeas.Text = measText[(measuringState ? 1 : 0)];  // Button label.
+            btnMeas.Text = Constants.MeasText[(measuringState ? 1 : 0)];  // Button label.
         }
 
         /// <summary>
@@ -622,69 +590,6 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
-        /// Timer tick => StartExposure().
-        /// And exposure time adaptation.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void TimerSpectra_Tick(object sender, EventArgs e)
-        {
-            // If unplugged!
-            if (spectrometer.CheckDeviceRemoved())
-            {
-                My_msg("Device removed!");
-                return;
-            }
-
-            if (firstWait)
-            {
-                firstWait = false;
-                timerSpectra.Interval = (int)(spectrometer.Period * 1000);
-            }
-            spectrometer.StartExposure();
-
-            //LabelBold(lblSetExp, true);  // Exposure.
-        }
-
-        /// <summary>
-        /// Tick every 10 sec. Changes DAC voltage
-        /// based on temperature set point nad PID.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void TimerPID_Tick(object sender, EventArgs e)
-        {
-            try
-            {
-                PID.ParametersCheck(
-                    sP: tBoxP.Text,
-                    sI: tBoxI.Text,
-                    sD: tBoxD.Text,
-                    sSetPoint: tBoxSP.Text,
-                    sRamp: tBoxRamp.Text,
-                    vDeltaAbsMax: tBoxVChange.Text,
-                    bufferLength: tBoxPIDAverage.Text);
-            }
-            catch (ArgumentException ex)
-            {
-                // Uncheck induces CheckChanged event!
-                chBoxPID.Checked = false;
-                My_msg(ex.Message);
-                return;
-            }
-            var VNewAndInfo = PID.Process(
-                time: times[times.Count - 1],
-                temperature: temperatures[temperatures.Count - 1],
-                vOld: DAC.LastWrittenValue);
-
-            DAC.SetV(temperatures[temperatures.Count - 1] / 100, 1, save: false);
-            DAC.SetV(VNewAndInfo.Item1, 2);
-
-            tBoxVoltage.Text = string.Format("{0:#.00}", DAC.LastWrittenValue);
-            lblInfo.Text = VNewAndInfo.Item2;
-        }
-
-        /// <summary>
         /// ExposureFinished event => Read and write spectrum.
         /// </summary>
         /// <param name="sender"></param>
@@ -692,17 +597,17 @@ namespace spectrometric_thermometer
         private void Spectrometer_ExposureFinished(object sender, Spectrometer.ExposureFinishedEventArgs e)
         {
             // Exposure time adaptation display.
-            if (spectrometer.UseAdaptation)
+            if (spectrometricThermometer.Spectrometer.UseAdaptation)
             {
                 LabelBold(lblAdaptation, e.Adapted);  // Change => true => bold.
-                tBoxExpTime.Text = string.Format("{0:#.00}", spectrometer.ExposureTime);
+                tBoxExpTime.Text = string.Format("{0:#.00}", spectrometricThermometer.Spectrometer.ExposureTime);
             }
 
             // Load wavelength, intensity and time.
-            if (measurement.Load(
-                wavelengths: spectrometer.Wavelengths,
-                intensities: Array.ConvertAll(spectrometer.Intensities, v => (double)v),
-                ticks: spectrometer.Time.Ticks))
+            if (spectrometricThermometer.Measurement.Load(
+                wavelengths: spectrometricThermometer.Spectrometer.Wavelengths,
+                intensities: Array.ConvertAll(spectrometricThermometer.Spectrometer.Intensities, v => (double)v),
+                ticks: spectrometricThermometer.Spectrometer.Time.Ticks))
             {
                 // If first, switch off.
                 LabelBold(lblAverage, false);
@@ -719,7 +624,7 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void Measurement_AveragingFinished(object sender, EventArgs e)
         {
-            if (measurement.SpectraToLoad > 1)
+            if (spectrometricThermometer.Measurement.SpectraToLoad > 1)
                 LabelBold(lblAverage, true);
 
             // Save to file.
@@ -734,8 +639,8 @@ namespace spectrometric_thermometer
                     fileNameNumber++;
                 }
 
-                WriteColumns(filename: fileNamePart + fileNameIntText + ".dat",
-                    col1: measurement.Wavelengths, col2: measurement.Intensities);
+                spectrometricThermometer.WriteColumns(filename: fileNamePart + fileNameIntText + ".dat",
+                    col1: spectrometricThermometer.Measurement.Wavelengths, col2: spectrometricThermometer.Measurement.Intensities);
             }
 
             AnalyzeMeasurement();
@@ -752,7 +657,7 @@ namespace spectrometric_thermometer
             double temp;
             try
             {
-                temp = measurement.Analyze();
+                temp = spectrometricThermometer.Measurement.Analyze();
             }
             catch (InvalidOperationException)
             {
@@ -761,8 +666,8 @@ namespace spectrometric_thermometer
 
             plt2.Title(string.Format("T = {0:0.0} °C", temp));
             // Save it.
-            temperatures.Add(temp);
-            times.Add(measurement.Time.Subtract(timeZero).TotalSeconds);
+            spectrometricThermometer.Temperatures.Add(temp);
+            spectrometricThermometer.Times.Add(spectrometricThermometer.Measurement.Time.Subtract(timeZero).TotalSeconds);
         }
 
         /// <summary>
@@ -774,7 +679,7 @@ namespace spectrometric_thermometer
         {
             // clickedWavelength => clickedIndex.
             // Apply any defensive coding here as necessary.
-            var values = measurement.Wavelengths;
+            var values = spectrometricThermometer.Measurement.Wavelengths;
             var minDifference = double.MaxValue;
             int clickedIndex = 0;
             for (int i = 0; i < values.Length; i++)
@@ -787,39 +692,18 @@ namespace spectrometric_thermometer
                 }
             }
 
-            measurement.IndexMax1D = clickedIndex;
+            spectrometricThermometer.Measurement.IndexMax1D = clickedIndex;
 
-            if (temperatures.Any()) //prevent IndexOutOfRangeException for empty list
+            if (spectrometricThermometer.Temperatures.Any()) //prevent IndexOutOfRangeException for empty list
             {
-                temperatures.RemoveAt(temperatures.Count - 1);
+                spectrometricThermometer.Temperatures.RemoveAt(spectrometricThermometer.Temperatures.Count - 1);
             }
-            if (times.Any()) //prevent IndexOutOfRangeException for empty list
+            if (spectrometricThermometer.Times.Any()) //prevent IndexOutOfRangeException for empty list
             {
-                times.RemoveAt(times.Count - 1);
+                spectrometricThermometer.Times.RemoveAt(spectrometricThermometer.Times.Count - 1);
             }
 
             AnalyzeMeasurement();
-        }
-
-        /// <summary>
-        /// Write two double columns into a file.
-        /// </summary>
-        /// <param name="filename"></param>
-        /// <param name="col1"></param>
-        /// <param name="col2"></param>
-        private void WriteColumns(string filename, double[] col1, double[] col2)
-        {
-            // Prepare the string array to be written.
-            int lines = col1.Length;
-            string[] mWrite = new string[lines];
-            for (int i = 0; (i <= (lines - 1)); i++)
-            {
-                mWrite[i] = col1[i]
-                    + delimiter + col2[i];
-            }
-
-            // Actually write wavelenghts and intensities to a "*.dat" file.
-            File.WriteAllLines(filename, mWrite);
         }
 
         /// <summary>
@@ -829,21 +713,21 @@ namespace spectrometric_thermometer
         private bool PlotData()
         {
             // Figure 1.
-            double[] x1 = measurement.Wavelengths;
-            double[] y1 = measurement.Intensities;
+            double[] x1 = spectrometricThermometer.Measurement.Wavelengths;
+            double[] y1 = spectrometricThermometer.Measurement.Intensities;
             if (x1 == null || y1 == null)
                 return false;
 
-            plt1.YLabel(fig1LabelY);
-            plt1.XLabel(fig1Title);
+            plt1.YLabel(Constants.Fig1LabelY);
+            plt1.XLabel(Constants.Fig1Title);
             plt1.AxisAuto(horizontalMargin: .9, verticalMargin: .5);
             plt1.Axis(null, null, 0, null);
             plt1.Clear();
             plt1.PlotScatter(x1, y1, color: Color.Red, markerSize: 0, lineWidth: 0.1);
             // Fitting graphics.
-            if (measurement.FitGraphics != null)
+            if (spectrometricThermometer.Measurement.FitGraphics != null)
             {
-                var mfg = measurement.FitGraphics;
+                var mfg = spectrometricThermometer.Measurement.FitGraphics;
                 plt1.PlotScatter(
                     new double[2] { mfg.LL.X, mfg.LR.X },
                     new double[2] { mfg.LL.Y, mfg.LR.Y },
@@ -861,18 +745,18 @@ namespace spectrometric_thermometer
 
                 x = new double[mfg.LIndexes[1]];
                 y = new double[mfg.LIndexes[1]];
-                Array.Copy(measurement.Wavelengths, mfg.LIndexes[0],
+                Array.Copy(spectrometricThermometer.Measurement.Wavelengths, mfg.LIndexes[0],
                     x, 0, mfg.LIndexes[1]);
-                Array.Copy(measurement.Intensities, mfg.LIndexes[0],
+                Array.Copy(spectrometricThermometer.Measurement.Intensities, mfg.LIndexes[0],
                     y, 0, mfg.LIndexes[1]);
                 plt1.PlotScatter(x, y, markerSize: 3,
                     color: Color.Black, lineWidth: 0);
 
                 x = new double[mfg.RIndexes[1]];
                 y = new double[mfg.RIndexes[1]];
-                Array.Copy(measurement.Wavelengths, mfg.RIndexes[0],
+                Array.Copy(spectrometricThermometer.Measurement.Wavelengths, mfg.RIndexes[0],
                     x, 0, mfg.RIndexes[1]);
-                Array.Copy(measurement.Intensities, mfg.RIndexes[0],
+                Array.Copy(spectrometricThermometer.Measurement.Intensities, mfg.RIndexes[0],
                     y, 0, mfg.RIndexes[1]);
                 plt1.PlotScatter(x, y, markerSize: 3, color: Color.Black);
             }
@@ -880,8 +764,8 @@ namespace spectrometric_thermometer
             formsPlot1.Render();
 
             // Figure 2.
-            double[] x2 = times.ToArray();
-            double[] y2 = temperatures.ToArray();
+            double[] x2 = spectrometricThermometer.Times.ToArray();
+            double[] y2 = spectrometricThermometer.Temperatures.ToArray();
 
             // Cannot PlotLine and AxisAuto() with one point.
             if (y2.Length == 0)
@@ -949,12 +833,12 @@ namespace spectrometric_thermometer
         /// <returns>Removed?</returns>
         private bool CheckDeviceRemoved()
         {
-            bool removed = spectrometer.CheckDeviceRemoved();
+            bool removed = spectrometricThermometer.Spectrometer.CheckDeviceRemoved();
             if (removed)
             {
-                My_msg("Spectrometer status: " + spectrometer.Status());
-                BtnMeas_Click(sender: spectrometer, e: EventArgs.Empty);  // Press STOP button.
-                BtnInit_Click(sender: spectrometer, e: EventArgs.Empty);  // Press DISCONNECT button.
+                My_msg("Spectrometer status: " + spectrometricThermometer.Spectrometer.Status());
+                BtnMeas_Click(sender: spectrometricThermometer.Spectrometer, e: EventArgs.Empty);  // Press STOP button.
+                BtnInit_Click(sender: spectrometricThermometer.Spectrometer, e: EventArgs.Empty);  // Press DISCONNECT button.
             }
             return removed;
         }
@@ -965,13 +849,13 @@ namespace spectrometric_thermometer
         /// </summary>
         private void DisconnectSpectrometer()
         {
-            if (spectrometer is null)
+            if (spectrometricThermometer.Spectrometer is null)
                 return;
 
-            if (spectrometer.DisconnectDevice())
+            if (spectrometricThermometer.Spectrometer.DisconnectDevice())
             {
                 My_msg("Closing");
-                spectrometer = null;
+                spectrometricThermometer.Spectrometer = null;
             }
         }
 
@@ -1057,14 +941,14 @@ namespace spectrometric_thermometer
                 {
                     throw new ArgumentException("Average error!" + " Must be positive.");
                 }
-                measurement.SpectraToLoad = average;
+                spectrometricThermometer.Measurement.SpectraToLoad = average;
             }
 
             // Path.
             fileNamePart = tBoxFilename;
 
             // Check its validity.
-            if (!IsValidFileNameOrPath(fileNamePart))
+            if (!SpectrometricThermometer.IsValidFileNameOrPath(fileNamePart))
             {
                 throw new ArgumentException("Path error!");
             }
@@ -1080,117 +964,16 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
-        /// Validity of path.
-        /// </summary>
-        /// <param name="name">Path to be checked.</param>
-        /// <returns>Correct?</returns>
-        private static bool IsValidFileNameOrPath(string name)
-        {
-            // Determines if the name is Nothing.
-            if (name is null)
-            {
-                return false;
-            }
-
-            // Determines if there are bad characters in the name.
-            foreach (char badChar in Path.GetInvalidPathChars())
-            {
-                if (name.IndexOf(badChar) > -1)
-                {
-                    return false;
-                }
-            }
-
-            // The name passes basic validation.
-            return true;
-        }
-
-        /// <summary>
-        /// Load txt file with two columns divided by 'delimiter'.
-        /// </summary>
-        /// <param name="filename">Path.</param>
-        /// <param name="delimiter">Default null means to use program-wide constant 'delimiter'.</param>
-        /// <returns>Tuple of two double arrays.</returns>
-        private Tuple<double[], double[]> LoadData(string filename, string delimiter = null)
-        {
-            if (delimiter == null)
-                delimiter = this.delimiter;
-
-            string[] lines = File.ReadAllLines(filename);
-            // SpectraSuite Data File recognize.
-            if (lines.Length > 0 && lines[0] == "SpectraSuite Data File")
-            {
-                lines = LoadData_SpectraSuiteDataFile(lines, delimiter);
-            }
-
-            Regex regex = new Regex(delimiter);
-
-            int rows = lines.Length;
-            double[] column1 = new double[rows];
-            double[] column2 = new double[rows];
-
-            for (int i = 0; i < rows; i++)
-            {
-                string line = lines[i];
-                // Last line.
-                if (string.IsNullOrEmpty(line))
-                {
-                    continue;
-                }
-                string[] fields = regex.Split(line);
-                column1[i] = _LoadData_parse(text: fields[0]);
-                column2[i] = _LoadData_parse(text: fields[1]);
-            }
-
-            return Tuple.Create(column1, column2);
-        }
-
-        /// <summary>
-        /// Delete header and lat line in SpectraSuiteDataFile.
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private static string[] LoadData_SpectraSuiteDataFile(
-            string[] input, string delimiter)
-        {
-            int len = input.Length - 17 - 1;
-            string[] output = new string[len];
-            Array.Copy(input, 17, output, 0, len);
-            for (int i = 0; i < len; i++)
-                output[i] = output[i].Replace(',', '.').Replace("\t", delimiter);
-            return output;
-        }
-
-        /// <summary>
-        /// Help method to LoadData().
-        /// Parsing loaded data to double.
-        /// </summary>
-        /// <exception cref="FileLoadException">Wrong file data format.</exception>
-        /// <param name="text">Text to parse.</param>
-        /// <returns>Parsed.</returns>
-        private static double _LoadData_parse(string text)
-        {
-            if (double.TryParse(text, out double result))
-            {
-                return result;
-            }
-            else
-            {
-                throw new FileLoadException("Exception raised while parsing the file.");
-            }
-
-        }
-
-        /// <summary>
         /// Load config from "Config.cfg".
         /// Mainly calibration files.
         /// </summary>
         private void ConfigurationFile_Load()
         {
-            Regex regex = new Regex(delimiter);
+            Regex regex = new Regex("    ");
+            //Regex regex = new Regex(delimiter);
             string[] lines = File.ReadAllLines("Config.cfg");
 
-            calibrations.Clear();
+            spectrometricThermometer.Calibrations.Clear();
             List<string> calibComboBox = new List<string>();
 
             for (int i = 0; i < lines.Length; i++)
@@ -1202,8 +985,8 @@ namespace spectrometric_thermometer
                         {
                             try
                             {
-                                var output = LoadData(items[1] + ".clb");
-                                calibrations.Add(new Calibration_Points(output.Item1, output.Item2));
+                                var output = spectrometricThermometer.LoadData(items[1] + ".clb");
+                                spectrometricThermometer.Calibrations.Add(new Calibration_Points(output.Item1, output.Item2));
                             }
                             catch (FileNotFoundException e)
                             {
@@ -1218,8 +1001,8 @@ namespace spectrometric_thermometer
                         {
                             try
                             {
-                                var output = LoadData(items[1] + ".clb");
-                                calibrations.Add(new Calibration_Polynom(output.Item2));
+                                var output = spectrometricThermometer.LoadData(items[1] + ".clb");
+                                spectrometricThermometer.Calibrations.Add(new Calibration_Polynom(output.Item2));
                             }
                             catch (FileNotFoundException e)
                             {
@@ -1233,7 +1016,7 @@ namespace spectrometric_thermometer
                     case "const_skip":
                         {
                             if (int.TryParse(items[1], out int output))
-                                measurement.Constants.const_skip = output;
+                                spectrometricThermometer.Measurement.Constants.const_skip = output;
                             else
                                 My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -1242,7 +1025,7 @@ namespace spectrometric_thermometer
                     case "const_eps":
                         {
                             if (double.TryParse(items[1], out double output))
-                                measurement.Constants.const_eps = output;
+                                spectrometricThermometer.Measurement.Constants.const_eps = output;
                             else
                                 My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -1251,7 +1034,7 @@ namespace spectrometric_thermometer
                     case "const_smooth1":
                         {
                             if (int.TryParse(items[1], out int output))
-                                measurement.Constants.const_smooth1 = output;
+                                spectrometricThermometer.Measurement.Constants.const_smooth1 = output;
                             else
                                 My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -1260,7 +1043,7 @@ namespace spectrometric_thermometer
                     case "const_smooth2":
                         {
                             if (int.TryParse(items[1], out int output))
-                                measurement.Constants.const_smooth2 = output;
+                                spectrometricThermometer.Measurement.Constants.const_smooth2 = output;
                             else
                                 My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -1269,7 +1052,7 @@ namespace spectrometric_thermometer
                     case "const_1DHalfW":
                         {
                             if (int.TryParse(items[1], out int output))
-                                measurement.Constants.const_1DHalfW = output;
+                                spectrometricThermometer.Measurement.Constants.const_1DHalfW = output;
                             else
                                 My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -1278,7 +1061,7 @@ namespace spectrometric_thermometer
                     case "const_slider":
                         {
                             if (double.TryParse(items[1], out double output))
-                                measurement.Constants.const_slider = output;
+                                spectrometricThermometer.Measurement.Constants.const_slider = output;
                             else
                                 My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -1342,11 +1125,11 @@ namespace spectrometric_thermometer
                             // Default case.
                             if (!new[] { "Inchworm", "Inchworm_VIT", "const" }.Contains(items[1]))
                             {
-                                measurement.Constants.absorbtion_edge = "const";
+                                spectrometricThermometer.Measurement.Constants.absorbtion_edge = "const";
                                 break;
                             }
 
-                            measurement.Constants.absorbtion_edge = items[1];
+                            spectrometricThermometer.Measurement.Constants.absorbtion_edge = items[1];
                             break;
                         }
 
@@ -1361,7 +1144,7 @@ namespace spectrometric_thermometer
             if (DAC == null)
                 DAC = new DigitalToAnalogConverter.Offline();
 
-            if (calibrations.Count == 0)
+            if (spectrometricThermometer.Calibrations.Count == 0)
             {
                 My_msg("No calibration found!");
                 btnCalib.Enabled = false;
@@ -1419,7 +1202,7 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void CBoxCalib_SelectedIndexChanged(object sender, EventArgs e)
         {
-            measurement.Calibration = calibrations[cBoxCalib.SelectedIndex];
+            spectrometricThermometer.Measurement.Calibration = spectrometricThermometer.Calibrations[cBoxCalib.SelectedIndex];
         }
 
         /// <summary>
@@ -1432,8 +1215,8 @@ namespace spectrometric_thermometer
             // Needed when Clear btn is pressed while measurement runs.
             timeZero = DateTime.Now;
 
-            times.Clear();
-            temperatures.Clear();
+            spectrometricThermometer.Times.Clear();
+            spectrometricThermometer.Temperatures.Clear();
             // Just rewriting is not enough, because PlotLines
             // is not called for one point only.
             plt2.Clear();
@@ -1462,25 +1245,25 @@ namespace spectrometric_thermometer
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    measurement.SpectraToLoad = 1;  // No averaging.
+                    spectrometricThermometer.Measurement.SpectraToLoad = 1;  // No averaging.
 
                     foreach (string file in openFileDialog.FileNames)
                     {
                         DateTime modification = File.GetLastWriteTime(file);
-                        var columns = LoadData(file);
+                        var columns = spectrometricThermometer.LoadData(file);
 
-                        if (!times.Any())
+                        if (!spectrometricThermometer.Times.Any())
                         {
                             timeZero = modification;
                         }
                         save = false;  // Just load, no saving.
-                        measurement.Load(
+                        spectrometricThermometer.Measurement.Load(
                             wavelengths: columns.Item1,
                             intensities: columns.Item2,
                             ticks: modification.Ticks);
 
                         save = chBoxSave.Checked;  // Reset.
-                        measurement.IndexMax1D = -1;
+                        spectrometricThermometer.Measurement.IndexMax1D = -1;
                         AnalyzeMeasurement();
                     }
                     PlotData();
@@ -1496,10 +1279,10 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void BtnSave_Click(object sender, EventArgs e)
         {
-            WriteColumns(
+            spectrometricThermometer.WriteColumns(
                 Path.GetDirectoryName(fileNamePart) + "/TemperatureHistory.txt",
-                times.ToArray(),
-                temperatures.ToArray());
+                spectrometricThermometer.Times.ToArray(),
+                spectrometricThermometer.Temperatures.ToArray());
             My_msg("Temperature history saved.");
         }
 
@@ -1527,7 +1310,7 @@ namespace spectrometric_thermometer
                         return;
                     }
                 }
-                if (temperatures.Count == 0)
+                if (spectrometricThermometer.Temperatures.Count == 0)
                 {
                     My_msg("No initial temperature! Setting DAC voltage only.");
                     if (!double.TryParse(tBoxVoltage.Text, out double initV) || initV < 0)
@@ -1543,7 +1326,7 @@ namespace spectrometric_thermometer
                     return;
                 }
                 // Initial temperature.
-                PID.Reset(temperatures[temperatures.Count - 1]);
+                PID.Reset(spectrometricThermometer.Temperatures[spectrometricThermometer.Temperatures.Count - 1]);
                 tBoxVoltage.Enabled = false;
                 // Try it now first (set initV).
                 TimerPID_Tick(sender, e);
@@ -1567,7 +1350,7 @@ namespace spectrometric_thermometer
             double[] y = new double[x.Length];
             for (int i = 0; i < x.Length; i++)
             {
-                y[i] = measurement.Calibration.Use(x[i]);
+                y[i] = spectrometricThermometer.Measurement.Calibration.Use(x[i]);
             }
             plt2.YLabel("Temperature (°C)");  // Set back in PlotData().
             plt2.Title("Calibration");  // Set back in PlotData().
@@ -1593,7 +1376,7 @@ namespace spectrometric_thermometer
 
             if (TemperatureControlMode1 == TemperatureControlMode.None)
             {
-                btnSwitch.Text = switchText[1];
+                btnSwitch.Text = Constants.SwitchText[1];
                 // Switched to eurotherm, so switching to this app.
                 if (ADC.Switched2Eurotherm())
                 {
@@ -1627,7 +1410,7 @@ namespace spectrometric_thermometer
             {
                 timerSwitch.Stop();
                 TemperatureControlMode1 = TemperatureControlMode.None;
-                btnSwitch.Text = switchText[0];
+                btnSwitch.Text = Constants.SwitchText[0];
                 LED("Off");
             }
         }
@@ -1650,7 +1433,7 @@ namespace spectrometric_thermometer
                     {
                         timerSwitch.Stop();
                         TemperatureControlMode1 = TemperatureControlMode.None;
-                        btnSwitch.Text = switchText[0];
+                        btnSwitch.Text = Constants.SwitchText[0];
                         LED("Off");
                     }
                     break;
@@ -1661,7 +1444,7 @@ namespace spectrometric_thermometer
                     {
                         timerSwitch.Stop();
                         TemperatureControlMode1 = TemperatureControlMode.None;
-                        btnSwitch.Text = switchText[0];
+                        btnSwitch.Text = Constants.SwitchText[0];
                         LED("Off");
                         break;
                     }
@@ -1686,7 +1469,7 @@ namespace spectrometric_thermometer
                     {
                         timerSwitch.Stop();
                         TemperatureControlMode1 = TemperatureControlMode.None;
-                        btnSwitch.Text = switchText[0];
+                        btnSwitch.Text = Constants.SwitchText[0];
                         LED("Off");
                     }
                     break;
@@ -1733,6 +1516,23 @@ namespace spectrometric_thermometer
             }
 
             lblSwitch.BackColor = Color.FromKnownColor(lblColour);
+        }
+
+        public static class Constants
+        {
+            /// <summary>
+            /// First line printed by My_msg().
+            /// </summary>
+            public static string InitLine { get; } = "Spectrometric Thermometer (version 3.5)";
+            
+            // Plotting.
+            public static string Fig1LabelY { get; } = "Intensity(a.u.)";
+            public static string Fig1Title { get; } = "Spectrum";
+            
+            // Buttons text.
+            public static string[] InitText { get; } = { "&Initialize", "Choose dev&ice", "Disc&onnect" };
+            public static string[] MeasText { get; } = { "&Measure", "S&top" };
+            public static string[] SwitchText { get; } = { "Pr&epare to switch", "Ab&ort" };
         }
     }
 }
