@@ -66,6 +66,7 @@ namespace spectrometric_thermometer
 
         /// <summary>
         /// Already loaded spectra to average.
+        /// If full, invoke AveragingFinished event.
         /// </summary>
         private int SpectraLoaded
         {

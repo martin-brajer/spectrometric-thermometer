@@ -72,6 +72,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Back2Front.cs" />
     <Compile Include="Calibration.cs" />
     <Compile Include="Spectrometer.Offline.cs" />
     <Compile Include="DigitalToAnalogConverter.cs" />

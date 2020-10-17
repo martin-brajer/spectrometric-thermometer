@@ -7,37 +7,133 @@ namespace spectrometric_thermometer
     public interface ISpectrometer
     {
         event EventHandler<Spectrometer.ExposureFinishedEventArgs> ExposureFinished;
+        /// <summary>
+        /// Data properties. Wavelenghts array.
+        /// </summary>
         double[] Wavelengths { get; }
+        /// <summary>
+        /// Data properties. Intensities array.
+        /// </summary>
         float[] Intensities { get; }
+        /// <summary>
+        /// Time properties. Time of the last measurement.
+        /// Preciselly of the ExposureEvent invoke.
+        /// </summary>
         DateTime Time { get; }
+        /// <summary>
+        /// Model name.
+        /// Read from device if available.
+        /// </summary>
         string ModelName { get; }
+        /// <summary>
+        /// Serial number.
+        /// Read from device if available.
+        /// </summary>
         string SerialNo { get; }
+        /// <summary>
+        /// Device exposure time.
+        /// Set by ParameterCheck() method.
+        /// </summary>
         float ExposureTime { get; }
+        /// <summary>
+        /// Used in local automatic exposure time correction.
+        /// Derived from exposure time input.
+        /// </summary>
         float MaxExposureTimeUser { get; }
+        /// <summary>
+        /// Device maximal exposure time.
+        /// </summary>
         float MaxExposureTime { get; }
+        /// <summary>
+        /// Device minimal exposure time.
+        /// </summary>
         float MinExposureTime { get; }
+        /// <summary>
+        /// Duration of the whole cycle: exposure + wait.
+        /// </summary>
         float Period { get; }
+        /// <summary>
+        /// If true, run <see cref="ExposureTimeAdaptation"/>
+        /// in <see cref="OnExposureFinished"/> method.
+        /// </summary>
         bool UseAdaptation { get; set; }
+        /// <summary>
+        /// Number of devices found by SearchDevices() method.
+        /// </summary>
         int NumberOfDevicesFound { get; }
+        
+        /// <summary>
+        /// Search for spectrometers.
+        /// Fill numberOfDevicesFound.
+        /// </summary>
         void SearchDevices();
+        /// <summary>
+        /// Erace list of devices found by SearchDevices().
+        /// Use before open, when the list is not needed anymore.
+        /// </summary>
         void EraceDeviceList();
+        /// <summary>
+        /// Select one of the found spectrometers.
+        /// Overload with int parameter.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">Param index greater than number of devices found.</exception>
+        /// <param name="index">Index of the array.</param>
         void SelectDevice(int index);
+        /// <summary>
+        /// Deselect the selected spectrometer.
+        /// Overload with no parameter.
+        /// </summary>
         void SelectDevice();
+        /// <summary>
+        /// Return true, if a device is selected.
+        /// </summary>
+        /// <returns></returns>
         bool IsSelected();
+        /// <summary>
+        /// Open and init.
+        /// </summary>
         void Open();
+        /// <summary>
+        /// Is the device open?
+        /// </summary>
+        /// <returns>Is it?</returns>
         bool IsOpen();
+        /// <summary>
+        /// Close the device.
+        /// </summary>
         void Close();
+        /// <summary>
+        /// Start exposure.
+        /// </summary>
+        void StartExposure();
+        /// <summary>
+        /// Cancel exposure.
+        /// </summary>
+        void CancelExposure();
+        /// <summary>
+        /// Is spectrometer unplugged?
+        /// </summary>
+        /// <returns>Removed?</returns>
+        bool CheckDeviceRemoved();
+        /// <summary>
+        /// Device status string.
+        /// </summary>
+        /// <returns>tatus.</returns>
+        string Status();
+        /// <summary>
+        /// Check if the device is taking spectrum.
+        /// </summary>
+        /// <returns>Is it?</returns>
+        bool StatusIsTakingSpectrum();
+        /// <summary>
+        /// Get spectrum and save it to intensities array.
+        /// </summary>
+        void SaveSpectrum();
         void ParameterCheck(
             string tBoxPeriod,
             string tBoxExpTime,
             bool chBoxAdaptation,
             string tBoxAdaptation);
-        void StartExposure();
-        void CancelExposure();
-        bool CheckDeviceRemoved();
-        string Status();
-        bool StatusIsTakingSpectrum();
-        void SaveSpectrum();
         bool DisconnectDevice();
         void Dispose();
     }
@@ -53,8 +149,6 @@ namespace spectrometric_thermometer
     {
         // Saturation intensity used in ExposureTimeAdaptation.
         protected float saturationLevel = 0f;
-
-        // Constants.
         // How often is checked, if exposure is finished, if no such a event is available.
         protected readonly float timeReserve = 0.1f;  // Seconds.
 
@@ -63,81 +157,18 @@ namespace spectrometric_thermometer
         /// </summary>
         public event EventHandler<ExposureFinishedEventArgs> ExposureFinished;
 
-        /// <summary>
-        /// Data properties. Wavelenghts array.
-        /// </summary>
         public double[] Wavelengths { get; protected set; }
-
-        /// <summary>
-        /// Data properties. Intensities array.
-        /// </summary>
         public float[] Intensities { get; protected set; }
-
-        /// <summary>
-        /// Time properties. Time of the last measurement.
-        /// Preciselly of the ExposureEvent invoke.
-        /// </summary>
         public DateTime Time { get; protected set; }
-
-        /// <summary>
-        /// Model name.
-        /// Read from device if available.
-        /// </summary>
-        public abstract string ModelName { get; }
-
-        /// <summary>
-        /// Serial number.
-        /// Read from device if available.
-        /// </summary>
-        public abstract string SerialNo
-        {
-            get;
-        }
-
-        /// <summary>
-        /// Device exposure time.
-        /// Set by ParameterCheck() method.
-        /// </summary>
+        public string ModelName { get; }
+        public string SerialNo { get; }
         public abstract float ExposureTime { get; protected set; }
-
-        /// <summary>
-        /// Used in local automatic exposure time correction.
-        /// Derived from exposure time input.
-        /// </summary>
         public float MaxExposureTimeUser { get; protected set; } = float.PositiveInfinity;
-
-        /// <summary>
-        /// Device maximal exposure time.
-        /// </summary>
         public abstract float MaxExposureTime { get; }
-
-        /// <summary>
-        /// Device minimal exposure time.
-        /// </summary>
         public abstract float MinExposureTime { get; }
-
-        /// <summary>
-        /// Duration of the whole cycle: exposure + wait.
-        /// </summary>
         public float Period { get; protected set; }
-
-        /// <summary>
-        /// If true, run <see cref="ExposureTimeAdaptation"/>
-        /// in <see cref="OnExposureFinished"/> method.
-        /// </summary>
         public bool UseAdaptation { get; set; } = false;
-
-        /// <summary>
-        /// Number of devices found by SearchDevices() method.
-        /// </summary>
         public int NumberOfDevicesFound { get; protected set; } = 0;
-
-        /// <summary>
-        /// Creator.
-        /// </summary>
-        public Spectrometer()
-        {
-        }
 
         /// <summary>
         /// Destructor.
@@ -168,53 +199,20 @@ namespace spectrometric_thermometer
             ExposureFinished?.Invoke(this, new ExposureFinishedEventArgs(adapted));
         }
 
-        /// <summary>
-        /// Search for spectrometers.
-        /// Fill numberOfDevicesFound.
-        /// </summary>
         public abstract void SearchDevices();
-
-        /// <summary>
-        /// Erace list of devices found by SearchDevices().
-        /// Use before open, when the list is not needed anymore.
-        /// </summary>
         public abstract void EraceDeviceList();
-
-        /// <summary>
-        /// Select one of the found spectrometers.
-        /// Overload with int parameter.
-        /// </summary>
-        /// <exception cref="IndexOutOfRangeException">Param index greater than number of devices found.</exception>
-        /// <param name="index">Index of the array.</param>
         public abstract void SelectDevice(int index);
-
-        /// <summary>
-        /// Deselect the selected spectrometer.
-        /// Overload with no parameter.
-        /// </summary>
         public abstract void SelectDevice();
-
-        /// <summary>
-        /// Return true, if a device is selected.
-        /// </summary>
-        /// <returns></returns>
         public abstract bool IsSelected();
-
-        /// <summary>
-        /// Open and init.
-        /// </summary>
         public abstract void Open();
-
-        /// <summary>
-        /// Is the device open?
-        /// </summary>
-        /// <returns>Is it?</returns>
         public abstract bool IsOpen();
-
-        /// <summary>
-        /// Close the device.
-        /// </summary>
         public abstract void Close();
+        public abstract void StartExposure();
+        public abstract void CancelExposure();
+        public abstract bool CheckDeviceRemoved();
+        public abstract string Status();
+        public abstract bool StatusIsTakingSpectrum();
+        public abstract void SaveSpectrum();
 
         /// <summary>
         /// GUI parameters parsing.
@@ -295,16 +293,6 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
-        /// Start exposure.
-        /// </summary>
-        public abstract void StartExposure();
-
-        /// <summary>
-        /// Cancel exposure.
-        /// </summary>
-        public abstract void CancelExposure();
-
-        /// <summary>
         /// Automatic exposure time adaptation.
         /// Settings:
         ///     30 % of points in the top 10 % intensities or
@@ -354,29 +342,6 @@ namespace spectrometric_thermometer
             ExposureTime = exposureTime;  // Finally write to device.
             return true;  // Exposure time has been changed.
         }
-
-        /// <summary>
-        /// Is spectrometer unplugged?
-        /// </summary>
-        /// <returns>Removed?</returns>
-        public abstract bool CheckDeviceRemoved();
-
-        /// <summary>
-        /// Device status string.
-        /// </summary>
-        /// <returns>tatus.</returns>
-        public abstract string Status();
-
-        /// <summary>
-        /// Check if the device is taking spectrum.
-        /// </summary>
-        /// <returns>Is it?</returns>
-        public abstract bool StatusIsTakingSpectrum();
-
-        /// <summary>
-        /// Get spectrum and save it to intensities array.
-        /// </summary>
-        public abstract void SaveSpectrum();
 
         /// <summary>
         /// Disconnect the device.
@@ -478,7 +443,7 @@ namespace spectrometric_thermometer
                         return new Offline();
 
                     default:
-                        throw new ArgumentException("Wrong 'device' parameter in creator.");
+                        throw new ArgumentException("Invalid 'device' parameter in creator.");
                 }
             }
 

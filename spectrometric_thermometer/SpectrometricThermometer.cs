@@ -6,6 +6,7 @@ using System;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace spectrometric_thermometer
 {
@@ -20,10 +21,14 @@ namespace spectrometric_thermometer
 
         List<double> Temperatures { get; set; }
         List<double> Times { get; set; }
+        DateTime TimeZero { get; set; }
 
         void WriteColumns(string filename, double[] col1, double[] col2);
         Tuple<double[], double[]> LoadData(string filename, string delimiter = null);
-        
+        string AnalyzeMeasurement();
+        string AnalyzeMeasurement(double clickedWavelength);
+        void DisconnectSpectrometer();
+
         event EventHandler<SpectrometricThermometer.PidUpdatedEventArgs> PidUpdated;
     }
 
@@ -66,8 +71,13 @@ namespace spectrometric_thermometer
         public Measurement Measurement { get; set; } = new Measurement();
         public List<double> Temperatures { get; set; } = new List<double>();
         public List<double> Times { get; set; } = new List<double>();
+        /// <summary>
+        /// Time of the first measurement (press of the Measure button).
+        /// From this time, seconds are counted.
+        /// </summary>
+        public DateTime TimeZero { get; set; }
 
-        private readonly Action<string, bool> MyMsg = null;
+        private readonly Action<string> My_msg = null;
         public event EventHandler<PidUpdatedEventArgs> PidUpdated;
 
         /// <summary>
@@ -87,7 +97,7 @@ namespace spectrometric_thermometer
         /// </summary>
         private bool firstWait = true;
 
-        public SpectrometricThermometer(Action<string, bool> myMsg)
+        public SpectrometricThermometer(Action<string> my_msg)
         {
             // Event handler inicialization.
             timerMeasure.Tick += new EventHandler(TimerSpectra_Tick);
@@ -98,7 +108,7 @@ namespace spectrometric_thermometer
             timerSwitch.Tick += new EventHandler(TimerSwitch_Tick);
             timerSwitch.Interval = 1000;  // 1 sec.
 
-            MyMsg = myMsg;
+            My_msg = my_msg;
         }
 
         /// <summary>
@@ -139,7 +149,7 @@ namespace spectrometric_thermometer
             // If unplugged!
             if (Spectrometer.CheckDeviceRemoved())
             {
-                MyMsg("Device removed!", true);
+                My_msg("Device removed!");
                 return;
             }
 
@@ -149,6 +159,22 @@ namespace spectrometric_thermometer
                 timerMeasure.Interval = (int)(Spectrometer.Period * 1000);
             }
             Spectrometer.StartExposure();
+        }
+
+        /// <summary>
+        /// Disconnect the device
+        /// and write closing message.
+        /// </summary>
+        public void DisconnectSpectrometer()
+        {
+            if (Spectrometer is null)
+                return;
+
+            if (Spectrometer.DisconnectDevice())
+            {
+                My_msg("Closing");
+                Spectrometer = null;
+            }
         }
 
         /// <summary>
@@ -175,6 +201,66 @@ namespace spectrometric_thermometer
 
             // The name passes basic validation.
             return true;
+        }
+
+        /// <summary>
+        /// Find absorbtion edge wavelength
+        /// Add corresponding temperature and time
+        /// to their respective fields.
+        /// </summary>
+        public string AnalyzeMeasurement()
+        {
+            double temp;
+            //try
+            {
+                temp = Measurement.Analyze();
+            }
+            //catch (InvalidOperationException)
+            //{
+            //    return;
+            //}
+
+            // Save it.
+            Temperatures.Add(temp);
+            Times.Add(Measurement.Time.Subtract(TimeZero).TotalSeconds);
+
+            return string.Format("T = {0:0.0} °C", temp);
+        }
+
+        /// <summary>
+        /// Find again absorbtion edge wavelength around clicked point.
+        /// Rewrite corresponding temperature and time.
+        /// </summary>
+        /// <param name="clickedWavelength"></param>
+        public string AnalyzeMeasurement(double clickedWavelength)
+        {
+            // clickedWavelength => clickedIndex.
+            // Apply any defensive coding here as necessary.
+            var values = Measurement.Wavelengths;
+            var minDifference = double.MaxValue;
+            int clickedIndex = 0;
+            for (int i = 0; i < values.Length; i++)
+            {
+                double difference = Math.Abs(values[i] - clickedWavelength);
+                if (difference < minDifference)
+                {
+                    minDifference = difference;
+                    clickedIndex = i;
+                }
+            }
+
+            Measurement.IndexMax1D = clickedIndex;
+
+            if (Temperatures.Any()) //prevent IndexOutOfRangeException for empty list
+            {
+                Temperatures.RemoveAt(Temperatures.Count - 1);
+            }
+            if (Times.Any()) //prevent IndexOutOfRangeException for empty list
+            {
+                Times.RemoveAt(Times.Count - 1);
+            }
+
+            return AnalyzeMeasurement();
         }
 
         /// <summary>
@@ -274,6 +360,9 @@ namespace spectrometric_thermometer
 
         }
 
+        /// <summary>
+        /// Voltage value and info string.
+        /// </summary>
         public class PidUpdatedEventArgs : EventArgs
         {
             public PidUpdatedEventArgs(string voltage, string info)
