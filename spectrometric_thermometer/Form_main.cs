@@ -749,56 +749,31 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
-        /// PID regulation "button" pressed.
+        /// PID regulation on/off.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void ChBoxPID_CheckedChanged(object sender, EventArgs e)
         {
-            if (chBoxPID.Checked)
+            if (chBoxPID.Checked)  // Switched on.
             {
-                if (spectrometricThermometer.DAC.PortName == null)  // Port is null.
-                {
-                    My_msg("DAC not found.");
-                    chBoxPID.Checked = false;
-                    return;
-                }
                 // Initial voltage (equal to eurotherm).
+                if (!double.TryParse(tBoxOutputVoltage.Text, out double initV) || initV < 0)
                 {
-                    if (!double.TryParse(tBoxOutputVoltage.Text, out double initV) || initV < 0)
-                    {
-                        My_msg("Invalid initial voltage.");
-                        chBoxPID.Checked = false;
-                        return;
-                    }
-                }
-                if (spectrometricThermometer.Temperatures.Count == 0)
-                {
-                    My_msg("No initial temperature! Setting DAC voltage only.");
-                    if (!double.TryParse(tBoxOutputVoltage.Text, out double initV) || initV < 0)
-                    {
-                        My_msg("Invalid initial voltage.");
-                        chBoxPID.Checked = false;
-                        return;
-                    }
-                    spectrometricThermometer.DAC.SetV(0, 1, save: false);
-                    spectrometricThermometer.DAC.SetV(initV, 2);
-
+                    My_msg("Invalid initial voltage.");
                     chBoxPID.Checked = false;
                     return;
                 }
-                // Initial temperature.
-                spectrometricThermometer.PID.Reset(spectrometricThermometer.Temperatures[spectrometricThermometer.Temperatures.Count - 1]);
-                tBoxOutputVoltage.Enabled = false;
-                // Try it now first (set initV).
-                TimerPID_Tick(sender, e);
-                timerPID.Start();
+                if (!spectrometricThermometer.PIDOn(initV))
+                {
+                    chBoxPID.Checked = false;
+                }
             }
-            else
+            else  // Switched off.
             {
-                tBoxOutputVoltage.Enabled = true;
-                timerPID.Stop();
+                spectrometricThermometer.PIDOff();
             }
+            tBoxOutputVoltage.Enabled = !chBoxPID.Checked;
         }
 
         /// <summary>
@@ -817,43 +792,24 @@ namespace spectrometric_thermometer
 
             if (TemperatureControlMode1 == TemperatureControlMode.None)
             {
-                btnSwitch.Text = Constants.BtnSwitchText[1];
-                // Switched to eurotherm, so switching to this app.
-                if (spectrometricThermometer.ADC.Switched2Eurotherm())
+                spectrometricThermometer.SwitchModeNone(out double outputVoltage);
+                if (!double.IsNaN(outputVoltage))
                 {
+                    tBoxOutputVoltage.Text = outputVoltage.ToString("F3");
                     TemperatureControlMode1 = TemperatureControlMode.ET2PC_switch;
-
-                    double V = spectrometricThermometer.ADC.ReadEurothermV();
-                    // Round to 12b - this should be given by DAC.
-                    V = Math.Round(V / 10 * 4096) / 409.6;  // ??
-                    spectrometricThermometer.DAC.SetV(V, 2);
-
-                    tBoxOutputVoltage.Text = V.ToString("F3");
-                    My_msg("You can switch to PC.");
-                    LED("Green");
                 }
-                // Switched to this app, so switching to eurotherm.
                 else
                 {
                     TemperatureControlMode1 = TemperatureControlMode.PC2ET_equal;
-                    double percent = spectrometricThermometer.DAC.LastWrittenValue / 5 * 100;  // Percentage out of 5 V.
-
-                    var a = spectrometricThermometer.DAC.GetV();
-                    My_msg("XX  P" + percent + "  DL" + spectrometricThermometer.DAC.LastWrittenValue + "  a0" + a[0] + "  a1" + a[1]);  // Analyze. DELETE!!!
-
-                    My_msg("Set Eurotherm to Manual / " + percent.ToString("F1") + " %.");
-                    LED("Red");
                 }
-                timerSwitch.Start();
             }
             // Sth is already happening => abort.
             else
             {
-                timerSwitch.Stop();
+                spectrometricThermometer.SwitchModeElse();
                 TemperatureControlMode1 = TemperatureControlMode.None;
-                btnSwitch.Text = Constants.BtnSwitchText[0];
-                LED("Off");
             }
+            btnSwitch.Text = Constants.BtnSwitchText[TemperatureControlMode1 != TemperatureControlMode.None ? 0 : 1];
         }
 
         /// <summary>

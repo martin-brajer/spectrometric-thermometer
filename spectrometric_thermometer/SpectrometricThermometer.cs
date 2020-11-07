@@ -651,6 +651,70 @@ namespace spectrometric_thermometer
             //LabelBold(lblSetExp, false);  // Not exposure.
         }
 
+        public bool PIDOn(double outputVoltage)
+        {
+            if (DAC.PortName == null)  // Port is null.
+            {
+                Front.My_msg("DAC not found.");
+                return false;
+            }
+            if (Temperatures.Count == 0)
+            {
+                Front.My_msg("No initial temperature! Setting DAC voltage only.");
+
+                DAC.SetV(0, 1, save: false);
+                DAC.SetV(outputVoltage, 2);
+                return false;
+            }
+            // Initial temperature.
+            PID.Reset(Temperatures[Temperatures.Count - 1]);
+            // Try it now first (set initV).
+            TimerPID_Tick(this, EventArgs.Empty);
+            timerPID.Start();
+            return true;
+        }
+
+        public bool PIDOff()
+        {
+            timerPID.Stop();
+            return true;
+        }
+
+        public bool SwitchModeNone(out double outputVoltage)
+        {
+            outputVoltage = double.NaN;
+            // Switched to eurotherm, so switching to this app.
+            if (ADC.Switched2Eurotherm())
+            {
+                outputVoltage = ADC.ReadEurothermV();
+                // Round to 12b - this should be given by DAC.
+                outputVoltage = Math.Round(outputVoltage / 10 * 4096) / 409.6;  // ??
+                DAC.SetV(outputVoltage, 2);
+
+                Front.My_msg("You can switch to PC.");
+                LED(LEDcolour.Green);
+            }
+            // Switched to this app, so switching to eurotherm.
+            else
+            {
+                double percent = DAC.LastWrittenValue / 5 * 100;  // Percentage out of 5 V.
+                var a = DAC.GetV();
+                Front.My_msg("XX  P" + percent + "  DL" + DAC.LastWrittenValue + "  a0" + a[0] + "  a1" + a[1]);  // Analyze. DELETE!!!
+
+                Front.My_msg("Set Eurotherm to Manual / " + percent.ToString("F1") + " %.");
+                LED(LEDcolour.Red);
+            }
+            timerSwitch.Start();
+            return true;
+        }
+
+        public bool SwitchModeElse()
+        {
+            timerSwitch.Stop();
+            LED(LEDcolour.Off);
+            return true;
+        }
+
         /// <summary>
         /// Periodically check switching progress.
         /// </summary>
