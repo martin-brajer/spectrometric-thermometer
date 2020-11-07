@@ -7,33 +7,15 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Linq;
+using System.Drawing;
 
 namespace spectrometric_thermometer
 {
     public interface ISpectrometricThermometer
-    {
-        ISpectrometer Spectrometer { get; set; }
-        List<ICalibration> Calibrations { get; set; }
-        Measurement Measurement { get; set; }
-        DigitalToAnalogConverter DAC { get; set; }
-        PIDController PID { get; set; }
-        AnalogToDigitalConverter_switcher ADC { get; set; }
-
-        List<double> Temperatures { get; set; }
-        List<double> Times { get; set; }
-        DateTime TimeZero { get; set; }
-
-        void WriteColumns(string filename, double[] col1, double[] col2);
-        Tuple<double[], double[]> LoadData(string filename, string delimiter = null);
-        string AnalyzeMeasurement();
-        string AnalyzeMeasurement(double clickedWavelength);
-        void DisconnectSpectrometer();
-
-        event EventHandler<SpectrometricThermometer.PidUpdatedEventArgs> PidUpdated;
-    }
+    { }
 
     //[Export(typeof(ISpectrometricThermometer))]
-    public class SpectrometricThermometer : ISpectrometricThermometer
+    public partial class SpectrometricThermometer : ISpectrometricThermometer
     {
         /// <summary>
         /// Delimiter used in WriteColumns() and ConfigurationFileLoad().
@@ -64,7 +46,7 @@ namespace spectrometric_thermometer
         public PIDController PID { get; set; } = new PIDController(
             bufferLen: 3,
             period: 4.5);
-
+        
         /// <summary>
         /// Single measurement data.
         /// </summary>
@@ -77,13 +59,12 @@ namespace spectrometric_thermometer
         /// </summary>
         public DateTime TimeZero { get; set; }
 
-        private readonly Action<string> My_msg = null;
-        public event EventHandler<PidUpdatedEventArgs> PidUpdated;
-
+        private readonly IBack2Front Front = null;
+        
         /// <summary>
         /// Start spectrometer exposure.
         /// </summary>
-        private Timer timerMeasure = new Timer();
+        public Timer timerMeasure = new Timer();
         /// <summary>
         /// PID control.
         /// </summary>
@@ -95,10 +76,25 @@ namespace spectrometric_thermometer
         /// <summary>
         /// The first waiting time is short and without measuring.
         /// </summary>
-        private bool firstWait = true;
+        public bool firstWait = true;
+        /// <summary>
+        /// File path + filename without optional numbers and extension.
+        /// </summary>
+        private string fileNamePart;
+        /// <summary>
+        /// Numbering of the saved files.
+        /// </summary>
+        private int fileNameNumber = 0;
 
-        public SpectrometricThermometer(Action<string> my_msg)
+
+        public SpectrometricThermometer(IBack2Front front)
         {
+            // Events.
+            Measurement.AveragingFinished += Measurement_AveragingFinished;
+            
+            // Config (+calibration).
+            ConfigurationFile_Load();
+            
             // Event handler inicialization.
             timerMeasure.Tick += new EventHandler(TimerSpectra_Tick);
 
@@ -108,7 +104,7 @@ namespace spectrometric_thermometer
             timerSwitch.Tick += new EventHandler(TimerSwitch_Tick);
             timerSwitch.Interval = 1000;  // 1 sec.
 
-            My_msg = my_msg;
+            Front = front ?? throw new ArgumentNullException(nameof(front));
         }
 
         /// <summary>
@@ -128,16 +124,10 @@ namespace spectrometric_thermometer
             DAC.SetV(Temperatures[Temperatures.Count - 1] / 100, 1, save: false);
             DAC.SetV(VNewAndInfo.Item1, 2);
 
-            OnPidUpdated(
-                voltage: string.Format("{0:#.00}", DAC.LastWrittenValue),
-                info: VNewAndInfo.Item2);
+            Front.PidVoltage = string.Format("{0:#.00}", DAC.LastWrittenValue);
+            Front.PidInfo = VNewAndInfo.Item2;
         }
 
-        protected virtual void OnPidUpdated(string voltage, string info)
-        {
-            PidUpdated?.Invoke(this, new PidUpdatedEventArgs(voltage, info));
-        }
-        
         /// <summary>
         /// Timer tick => StartExposure().
         /// And exposure time adaptation.
@@ -149,7 +139,7 @@ namespace spectrometric_thermometer
             // If unplugged!
             if (Spectrometer.CheckDeviceRemoved())
             {
-                My_msg("Device removed!");
+                Front.My_msg("Device removed!");
                 return;
             }
 
@@ -159,22 +149,6 @@ namespace spectrometric_thermometer
                 timerMeasure.Interval = (int)(Spectrometer.Period * 1000);
             }
             Spectrometer.StartExposure();
-        }
-
-        /// <summary>
-        /// Disconnect the device
-        /// and write closing message.
-        /// </summary>
-        public void DisconnectSpectrometer()
-        {
-            if (Spectrometer is null)
-                return;
-
-            if (Spectrometer.DisconnectDevice())
-            {
-                My_msg("Closing");
-                Spectrometer = null;
-            }
         }
 
         /// <summary>
@@ -201,6 +175,544 @@ namespace spectrometric_thermometer
 
             // The name passes basic validation.
             return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool BtnInitialize()
+        {
+            try
+            {
+                Spectrometer = Spectrometer.Factory.Create(cBoxSpect.SelectedIndex);
+            }
+            catch (DllNotFoundException ex)
+            {
+                Front.My_msg(ex.Message);
+                return false;
+            }
+
+            // ExposureFinished event.
+            Spectrometer.ExposureFinished += new EventHandler<Spectrometer.ExposureFinishedEventArgs>(Spectrometer_ExposureFinished);
+
+            // Use the choosen spectrometer class to search for devices.
+            Spectrometer.SearchDevices();
+            if (Spectrometer.NumberOfDevicesFound == 0)
+            {
+                Front.My_msg("No spectrometer found.");
+                return false;  // initState remains the same.
+            }
+            else
+            {
+                Front.My_msg("Spectrometers found:");
+                for (int deviceIndex = 0; deviceIndex < Spectrometer.NumberOfDevicesFound; deviceIndex++)
+                {
+                    Spectrometer.SelectDevice(deviceIndex);
+                    Front.My_msg("  " + deviceIndex + "... " + Spectrometer.ModelName + " : " + Spectrometer.SerialNo);
+                }
+                Spectrometer.SelectDevice();
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="choosenDevice"></param>
+        /// <param name="exposurePeriodTimes"></param>
+        /// <returns></returns>
+        public bool BtnSelect(int choosenDevice, out Tuple<string, string> exposurePeriodTimes)
+        {
+            exposurePeriodTimes = new Tuple<string, string> ( "", "" );
+            try
+            {
+                Spectrometer.SelectDevice(choosenDevice);
+            }
+            catch (IndexOutOfRangeException ex)
+            {
+                Front.My_msg("Out of range: " + ex.Message);
+                return false;
+            }
+
+            Spectrometer.EraceDeviceList();
+            Spectrometer.Open();
+            Front.My_msg("Openning " + Spectrometer.ModelName + " : " + Spectrometer.SerialNo);
+
+            exposurePeriodTimes = new Tuple<string, string>(
+                string.Format("{0:0.0}", Spectrometer.ExposureTime.ToString()),
+                string.Format("{0:0.0}", Spectrometer.Period.ToString()));
+            return true;
+        }
+
+        /// <summary>
+        /// Disconnect the device
+        /// and write closing message.
+        /// </summary>
+        public bool BtnDisconnect()
+        {
+            if (Spectrometer is null)
+                return false;
+
+            if (Spectrometer.DisconnectDevice())
+            {
+                Front.My_msg("Closing");
+                Spectrometer = null;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public bool BtnStartMeasurement(Parameters parameters)
+        {
+            // Spectrometer bounds.
+            if (exposureTime < MinExposureTime)
+                throw new ArgumentException("Minimal exposure time is " + MinExposureTime.ToString());
+            if (exposureTime > MaxExposureTime)
+                throw new ArgumentException("Maximal exposure time is " + MaxExposureTime.ToString());
+
+            Measurement.SpectraToLoad = parameters.Average;
+            fileNamePart = parameters.Filename;
+            Spectrometer.UseAdaptation = parameters.Adaptation;
+            if (Spectrometer.UseAdaptation)
+            {
+                float maxExposureTimeUser = parameters.AdaptationMaxExposureTime;
+                if (maxExposureTimeUser < parameters.ExposureTime)
+                {
+                    throw new ArgumentException("Max ET Error!" + " Higher than exposure time.");
+                }
+                Spectrometer.MaxExposureTimeUser = maxExposureTimeUser;
+            }
+
+            if (!Times.Any())  // Is empty?
+            {
+                TimeZero = DateTime.Now;
+            }
+            Measurement.IndexMax1D = -1;  // Reset.
+
+
+            Front.My_msg("Parameters set & measuring");
+            if (Measurement.SpectraToLoad > 1)
+            {
+                float time = Spectrometer.Period * Measurement.SpectraToLoad;
+                Front.My_msg("Spectrum saved every " + time.ToString() + " s.");
+            }
+            //LabelBold(lblSetExp, false);  // Exposure.
+
+            firstWait = true;
+            timerMeasure.Interval = (int)((Spectrometer.Period - Spectrometer.ExposureTime) * 1000);
+            timerMeasure.Start();
+
+            return true;
+        }
+
+        public bool BtnStopMeasurement()
+        {
+            timerMeasure.Stop();
+            Spectrometer.CancelExposure();
+            return true;
+        }
+
+        public bool BtnSaveTemperatures()
+        {
+            WriteColumns(
+                  Path.GetDirectoryName(fileNamePart) + "/TemperatureHistory.txt",
+                  Times.ToArray(),
+                  Temperatures.ToArray());
+            return true;
+        }
+
+        public bool BtnReloadConfig()
+        {
+            ConfigurationFile_Load();
+            return true;
+        }
+
+        public void SelectCalibration(int SelectedIndex)
+        {
+            Measurement.Calibration = Calibrations[SelectedIndex];
+        }
+
+        public void ResetTemperatureHistory()
+        {
+            // Needed when Clear btn is pressed while measurement runs.
+            TimeZero = DateTime.Now;
+
+            Times.Clear();
+            Temperatures.Clear();
+        }
+
+        public void Close()
+        {
+            DAC.Close();
+            ADC.Close();
+            BtnDisconnect();
+        }
+
+        /// <summary>
+        /// Is spectrometer unplugged?
+        /// If yes, press Stop and Disconnect buttons.
+        /// </summary>
+        /// <returns>Removed?</returns>
+        private bool CheckDeviceRemoved()
+        {
+            bool removed = Spectrometer.CheckDeviceRemoved();
+            if (removed)
+            {
+                Front.My_msg("Spectrometer status: " + Spectrometer.Status());
+                BtnMeas_Click(sender: spectrometricThermometer.Spectrometer, e: EventArgs.Empty);  // Press STOP button.
+                BtnInit_Click(sender: spectrometricThermometer.Spectrometer, e: EventArgs.Empty);  // Press DISCONNECT button.
+            }
+            return removed;
+        }
+
+        /// <summary>
+        /// Load config from "Config.cfg".
+        /// Mainly calibration files.
+        /// </summary>
+        public void ConfigurationFile_Load()
+        {
+            Regex regex = new Regex("    ");
+            //Regex regex = new Regex(delimiter);
+            string[] lines = File.ReadAllLines("Config.cfg");
+
+            Calibrations.Clear();
+            List<string> calibComboBox = new List<string>();
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string[] items = regex.Split(lines[i]);
+                switch (items[0])
+                {
+                    case "calib_points":
+                        {
+                            try
+                            {
+                                var output = LoadData(items[1] + ".clb");
+                                Calibrations.Add(new Calibration_Points(output.Item1, output.Item2));
+                            }
+                            catch (FileNotFoundException e)
+                            {
+                                My_msg(string.Format(
+                                    "Config.cfg: FileError: '{0}'.", e.Message));
+                                break;
+                            }
+                            calibComboBox.Add(items[1]);
+                            break;
+                        }
+                    case "calib_polynom":
+                        {
+                            try
+                            {
+                                var output = LoadData(items[1] + ".clb");
+                                Calibrations.Add(new Calibration_Polynom(output.Item2));
+                            }
+                            catch (FileNotFoundException e)
+                            {
+                                My_msg(string.Format(
+                                    "Config.cfg: FileError: '{0}'.", e.Message));
+                                break;
+                            }
+                            calibComboBox.Add(items[1]);
+                            break;
+                        }
+                    case "const_skip":
+                        {
+                            if (int.TryParse(items[1], out int output))
+                                Measurement.Constants.const_skip = output;
+                            else
+                                My_msg(string.Format(
+                                    "Config.cfg: Parse error: '{0}'.", output));
+                            break;
+                        }
+                    case "const_eps":
+                        {
+                            if (double.TryParse(items[1], out double output))
+                                Measurement.Constants.const_eps = output;
+                            else
+                                My_msg(string.Format(
+                                    "Config.cfg: Parse error: '{0}'.", output));
+                            break;
+                        }
+                    case "const_smooth1":
+                        {
+                            if (int.TryParse(items[1], out int output))
+                                Measurement.Constants.const_smooth1 = output;
+                            else
+                                My_msg(string.Format(
+                                    "Config.cfg: Parse error: '{0}'.", output));
+                            break;
+                        }
+                    case "const_smooth2":
+                        {
+                            if (int.TryParse(items[1], out int output))
+                                Measurement.Constants.const_smooth2 = output;
+                            else
+                                My_msg(string.Format(
+                                    "Config.cfg: Parse error: '{0}'.", output));
+                            break;
+                        }
+                    case "const_1DHalfW":
+                        {
+                            if (int.TryParse(items[1], out int output))
+                                Measurement.Constants.const_1DHalfW = output;
+                            else
+                                My_msg(string.Format(
+                                    "Config.cfg: Parse error: '{0}'.", output));
+                            break;
+                        }
+                    case "const_slider":
+                        {
+                            if (double.TryParse(items[1], out double output))
+                                Measurement.Constants.const_slider = output;
+                            else
+                                My_msg(string.Format(
+                                    "Config.cfg: Parse error: '{0}'.", output));
+                            break;
+                        }
+                    case "DAC":
+                        {
+                            switch (items[1])
+                            {
+                                case "lab":
+                                    DAC = new DigitalToAnalogConverter.Lab();
+                                    break;
+                                case "offline":
+                                    DAC = new DigitalToAnalogConverter.Offline();
+                                    break;
+                                default:
+                                    My_msg(string.Format(
+                                        "Config.cfg: DAC keyError: '{0}'. Setting offline.", items[1]));
+                                    DAC = new DigitalToAnalogConverter.Offline();
+                                    break;
+                            }
+                            break;
+                        }
+                    case "DAC_maxStep":
+                        {
+                            if (double.TryParse(items[1], out double output))
+                                PID.VDeltaAbsMax = output;
+                            else
+                                My_msg(string.Format(
+                                    "Config.cfg: Parse error: '{0}'.", output));
+                            break;
+                        }
+                    case "PID_P":
+                        {
+                            tBoxP.Text = items[1];
+                            break;
+                        }
+                    case "PID_I":
+                        {
+                            tBoxI.Text = items[1];
+                            break;
+                        }
+                    case "PID_D":
+                        {
+                            tBoxD.Text = items[1];
+                            break;
+                        }
+
+                    case "PID_period":
+                        {
+                            if (double.TryParse(items[1], out double output))
+                                PID.Period = output;
+                            else
+                                My_msg(string.Format(
+                                    "Config.cfg: Parse error: '{0}'.", output));
+                            break;
+                        }
+
+                    case "absorbtion_edge":
+                        {
+                            // Default case.
+                            if (!new[] { "Inchworm", "Inchworm_VIT", "const" }.Contains(items[1]))
+                            {
+                                Measurement.Constants.absorbtion_edge = "const";
+                                break;
+                            }
+
+                            Measurement.Constants.absorbtion_edge = items[1];
+                            break;
+                        }
+
+                    default:
+                        My_msg(string.Format(
+                            "Config.cfg: KeyError: '{0}'.", items[0]));
+                        break;
+                }
+            }
+
+            // If DAC not in config file.
+            if (DAC == null)
+                DAC = new DigitalToAnalogConverter.Offline();
+
+            if (Calibrations.Count == 0)
+            {
+                My_msg("No calibration found!");
+                btnCalib.Enabled = false;
+                return;
+            }
+            btnCalib.Enabled = true;
+            // ComboBox.
+            cBoxCalib.DataSource = calibComboBox;
+            cBoxCalib.SelectedIndex = 0;
+        }
+
+        /// <summary>
+        /// Light app LED and hardware LED (if available).
+        /// </summary>
+        /// <param name="colour"></param>
+        private void LED(LEDcolour colour)
+        {
+            switch (colour)
+            {
+                case LEDcolour.Green:
+                    Front.LEDColor = KnownColor.ForestGreen;
+                    if (ADC.PortName != null)
+                        ADC.LED_Green();
+                    break;
+
+                case LEDcolour.Red:
+                    Front.LEDColor = KnownColor.IndianRed;
+                    if (ADC.PortName != null)
+                        ADC.LED_Red();
+                    break;
+
+                case LEDcolour.Off:
+                    Front.LEDColor = null;
+                    if (ADC.PortName != null)
+                        ADC.LED_Off();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// When averaging is complete,
+        /// write to file, analyze and plot.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Measurement_AveragingFinished(object sender, EventArgs e)
+        {
+            if (spectrometricThermometer.Measurement.SpectraToLoad > 1)
+                LabelBold(lblAverage, true);
+
+            // Save to file.
+            if (save)
+            {
+                // Handle numbering if enabled.
+                string fileNameIntText = "";
+                if (!chBoxRewrite.Checked)
+                {
+                    fileNameIntText = fileNameNumber.ToString("D" + tBoxIndex.Text.Length);
+                    tBoxIndex.Text = fileNameIntText;
+                    fileNameNumber++;
+                }
+
+                spectrometricThermometer.WriteColumns(filename: fileNamePart + fileNameIntText + ".dat",
+                    col1: spectrometricThermometer.Measurement.Wavelengths, col2: spectrometricThermometer.Measurement.Intensities);
+            }
+
+            plt2.Title(spectrometricThermometer.AnalyzeMeasurement());
+            PlotData();
+        }
+
+        /// <summary>
+        /// ExposureFinished event => Read and write spectrum.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Spectrometer_ExposureFinished(object sender, Spectrometer.ExposureFinishedEventArgs e)
+        {
+            // Exposure time adaptation display.
+            if (spectrometricThermometer.Spectrometer.UseAdaptation)
+            {
+                LabelBold(lblAdaptation, e.Adapted);  // Change => true => bold.
+                tBoxExpTime.Text = string.Format("{0:#.00}", spectrometricThermometer.Spectrometer.ExposureTime);
+            }
+
+            // Load wavelength, intensity and time.
+            if (spectrometricThermometer.Measurement.Load(
+                wavelengths: spectrometricThermometer.Spectrometer.Wavelengths,
+                intensities: Array.ConvertAll(spectrometricThermometer.Spectrometer.Intensities, v => (double)v),
+                ticks: spectrometricThermometer.Spectrometer.Time.Ticks))
+            {
+                // If first, switch off.
+                LabelBold(lblAverage, false);
+            }
+            //LabelBold(lblSetExp, false);  // Not exposure.
+        }
+
+        /// <summary>
+        /// Periodically check switching progress.
+        /// </summary>
+        /// <exception cref="ApplicationException">Wrong TemperatureControlMode.</exception>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void TimerSwitch_Tick(object sender, EventArgs e)
+        {
+            switch (TemperatureControlMode1)
+            {
+                case TemperatureControlMode.None:
+                    throw new ApplicationException("Wrong mode.");
+
+                case TemperatureControlMode.ET2PC_switch:
+                    if (!ADC.Switched2Eurotherm())
+                    {
+                        timerSwitch.Stop();
+                        TemperatureControlMode1 = TemperatureControlMode.None;
+                        btnSwitch.Text = Constants.SwitchText[0];
+                        LED("Off");
+                    }
+                    break;
+
+                case TemperatureControlMode.PC2ET_equal:
+                    // If switched before the voltages are equalized.
+                    if (ADC.Switched2Eurotherm())
+                    {
+                        timerSwitch.Stop();
+                        TemperatureControlMode1 = TemperatureControlMode.None;
+                        btnSwitch.Text = Constants.SwitchText[0];
+                        LED("Off");
+                        break;
+                    }
+                    // If difference is lesser than error.
+                    My_msg("XX AR" + ADC.ReadEurothermV() + "  AL" + DAC.LastWrittenValue);
+                    if (Math.Abs(ADC.ReadEurothermV() - DAC.LastWrittenValue) < 0.05)
+                    {
+                        TemperatureControlMode1 = TemperatureControlMode.PC2ET_switch;
+                        My_msg("You can switch to Eurotherm.");
+                        LED("Green");
+                    }
+                    break;
+
+                case TemperatureControlMode.PC2ET_switch:
+                    // If difference is greater again than error.
+                    if (Math.Abs(ADC.ReadEurothermV() - DAC.LastWrittenValue) >= 0.05)
+                    {
+                        TemperatureControlMode1 = TemperatureControlMode.PC2ET_equal;
+                        LED("Red");
+                    }
+                    if (ADC.Switched2Eurotherm())
+                    {
+                        timerSwitch.Stop();
+                        TemperatureControlMode1 = TemperatureControlMode.None;
+                        btnSwitch.Text = Constants.SwitchText[0];
+                        LED("Off");
+                    }
+                    break;
+
+                default:
+                    break;
+            }
         }
 
         /// <summary>
@@ -357,22 +869,16 @@ namespace spectrometric_thermometer
             {
                 throw new FileLoadException("Exception raised while parsing the file.");
             }
-
         }
 
         /// <summary>
-        /// Voltage value and info string.
+        /// Allowed colors.
         /// </summary>
-        public class PidUpdatedEventArgs : EventArgs
+        private enum LEDcolour
         {
-            public PidUpdatedEventArgs(string voltage, string info)
-            {
-                Voltage = voltage;
-                Info = info;
-            }
-
-            public string Voltage { get; private set; }
-            public string Info { get; private set; }
+            Off,
+            Green,
+            Red,
         }
     }
 }

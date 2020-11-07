@@ -31,59 +31,59 @@
         {
             this.components = new System.ComponentModel.Container();
             this.pnlSettings = new System.Windows.Forms.Panel();
-            this.cBoxSpect = new System.Windows.Forms.ComboBox();
-            this.chBoxAdaptation = new System.Windows.Forms.CheckBox();
+            this.cBoxDeviceType = new System.Windows.Forms.ComboBox();
+            this.chBoxETAdaptation = new System.Windows.Forms.CheckBox();
             this.chBoxSave = new System.Windows.Forms.CheckBox();
             this.chBoxRewrite = new System.Windows.Forms.CheckBox();
-            this.tBoxIndex = new System.Windows.Forms.TextBox();
+            this.tBoxFilenameIndex = new System.Windows.Forms.TextBox();
             this.tBoxFilename = new System.Windows.Forms.TextBox();
-            this.lblAdaptation = new System.Windows.Forms.Label();
-            this.tBoxAdaptation = new System.Windows.Forms.TextBox();
-            this.lblSetFM = new System.Windows.Forms.Label();
-            this.lblSpect = new System.Windows.Forms.Label();
-            this.tboxSpect = new System.Windows.Forms.TextBox();
+            this.lblETAdaptation = new System.Windows.Forms.Label();
+            this.tBoxETAdaptation = new System.Windows.Forms.TextBox();
+            this.lblFilename = new System.Windows.Forms.Label();
+            this.lblDeviceType = new System.Windows.Forms.Label();
+            this.tboxSelectSpectrometer = new System.Windows.Forms.TextBox();
             this.tBoxAverage = new System.Windows.Forms.TextBox();
-            this.lblSetSpect = new System.Windows.Forms.Label();
-            this.tBoxExpTime = new System.Windows.Forms.TextBox();
-            this.lblSetExp = new System.Windows.Forms.Label();
-            this.tBoxPeriod = new System.Windows.Forms.TextBox();
+            this.lblSelectSpectrometer = new System.Windows.Forms.Label();
+            this.tBoxExposureTime = new System.Windows.Forms.TextBox();
+            this.lblExposureTime = new System.Windows.Forms.Label();
+            this.tBoxPeriodLength = new System.Windows.Forms.TextBox();
             this.lblSave = new System.Windows.Forms.Label();
-            this.lblRwt = new System.Windows.Forms.Label();
-            this.lblPeriod = new System.Windows.Forms.Label();
+            this.lblRewrite = new System.Windows.Forms.Label();
+            this.lblPeriodLength = new System.Windows.Forms.Label();
             this.lblAverage = new System.Windows.Forms.Label();
-            this.btnConfig = new System.Windows.Forms.Button();
+            this.btnReloadConfig = new System.Windows.Forms.Button();
             this.tBoxLog = new System.Windows.Forms.TextBox();
             this.btnHelp = new System.Windows.Forms.Button();
             this.btnExit = new System.Windows.Forms.Button();
-            this.btnInit = new System.Windows.Forms.Button();
-            this.btnMeas = new System.Windows.Forms.Button();
+            this.btnInitialize = new System.Windows.Forms.Button();
+            this.btnMeasure = new System.Windows.Forms.Button();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.tBoxD = new System.Windows.Forms.TextBox();
-            this.tBoxP = new System.Windows.Forms.TextBox();
-            this.tBoxI = new System.Windows.Forms.TextBox();
+            this.tBoxPID_D = new System.Windows.Forms.TextBox();
+            this.tBoxPID_P = new System.Windows.Forms.TextBox();
+            this.tBoxPID_I = new System.Windows.Forms.TextBox();
             this.shapeContainer1 = new Microsoft.VisualBasic.PowerPacks.ShapeContainer();
             this.lineShape1 = new Microsoft.VisualBasic.PowerPacks.LineShape();
             this.pnl2 = new System.Windows.Forms.Panel();
-            this.lblSwitch = new System.Windows.Forms.Label();
-            this.tBoxVChange = new System.Windows.Forms.TextBox();
-            this.tBoxSP = new System.Windows.Forms.TextBox();
+            this.lblLED = new System.Windows.Forms.Label();
+            this.tBoxVoltageStep = new System.Windows.Forms.TextBox();
+            this.tBoxSetpoint = new System.Windows.Forms.TextBox();
             this.tBoxPIDAverage = new System.Windows.Forms.TextBox();
-            this.tBoxVoltage = new System.Windows.Forms.TextBox();
+            this.tBoxOutputVoltage = new System.Windows.Forms.TextBox();
             this.tBoxRamp = new System.Windows.Forms.TextBox();
             this.chBoxPID = new System.Windows.Forms.CheckBox();
-            this.btnSave = new System.Windows.Forms.Button();
-            this.lblTemp = new System.Windows.Forms.Label();
+            this.btnSaveTemperatures = new System.Windows.Forms.Button();
+            this.lblSetpoint = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
             this.lblPIDAverage = new System.Windows.Forms.Label();
-            this.lblStep = new System.Windows.Forms.Label();
-            this.lblVoltage = new System.Windows.Forms.Label();
+            this.lblVoltageStep = new System.Windows.Forms.Label();
+            this.lblOutputVoltage = new System.Windows.Forms.Label();
             this.lblRamp = new System.Windows.Forms.Label();
-            this.btnLoad = new System.Windows.Forms.Button();
+            this.btnLoadSpectra = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
-            this.cBoxCalib = new System.Windows.Forms.ComboBox();
+            this.cBoxCalibration = new System.Windows.Forms.ComboBox();
             this.btnSwitch = new System.Windows.Forms.Button();
-            this.btnCalib = new System.Windows.Forms.Button();
-            this.btnSize = new System.Windows.Forms.Button();
+            this.btnPlotCalibration = new System.Windows.Forms.Button();
+            this.btnDefaultSize = new System.Windows.Forms.Button();
             this.formsPlot1 = new ScottPlot.FormsPlot();
             this.formsPlot2 = new ScottPlot.FormsPlot();
             this.pnlSettings.SuspendLayout();
@@ -92,51 +92,51 @@
             // 
             // pnlSettings
             // 
-            this.pnlSettings.Controls.Add(this.cBoxSpect);
-            this.pnlSettings.Controls.Add(this.chBoxAdaptation);
+            this.pnlSettings.Controls.Add(this.cBoxDeviceType);
+            this.pnlSettings.Controls.Add(this.chBoxETAdaptation);
             this.pnlSettings.Controls.Add(this.chBoxSave);
             this.pnlSettings.Controls.Add(this.chBoxRewrite);
-            this.pnlSettings.Controls.Add(this.tBoxIndex);
+            this.pnlSettings.Controls.Add(this.tBoxFilenameIndex);
             this.pnlSettings.Controls.Add(this.tBoxFilename);
-            this.pnlSettings.Controls.Add(this.lblAdaptation);
-            this.pnlSettings.Controls.Add(this.tBoxAdaptation);
-            this.pnlSettings.Controls.Add(this.lblSetFM);
-            this.pnlSettings.Controls.Add(this.lblSpect);
-            this.pnlSettings.Controls.Add(this.tboxSpect);
+            this.pnlSettings.Controls.Add(this.lblETAdaptation);
+            this.pnlSettings.Controls.Add(this.tBoxETAdaptation);
+            this.pnlSettings.Controls.Add(this.lblFilename);
+            this.pnlSettings.Controls.Add(this.lblDeviceType);
+            this.pnlSettings.Controls.Add(this.tboxSelectSpectrometer);
             this.pnlSettings.Controls.Add(this.tBoxAverage);
-            this.pnlSettings.Controls.Add(this.lblSetSpect);
-            this.pnlSettings.Controls.Add(this.tBoxExpTime);
-            this.pnlSettings.Controls.Add(this.lblSetExp);
-            this.pnlSettings.Controls.Add(this.tBoxPeriod);
+            this.pnlSettings.Controls.Add(this.lblSelectSpectrometer);
+            this.pnlSettings.Controls.Add(this.tBoxExposureTime);
+            this.pnlSettings.Controls.Add(this.lblExposureTime);
+            this.pnlSettings.Controls.Add(this.tBoxPeriodLength);
             this.pnlSettings.Controls.Add(this.lblSave);
-            this.pnlSettings.Controls.Add(this.lblRwt);
-            this.pnlSettings.Controls.Add(this.lblPeriod);
+            this.pnlSettings.Controls.Add(this.lblRewrite);
+            this.pnlSettings.Controls.Add(this.lblPeriodLength);
             this.pnlSettings.Controls.Add(this.lblAverage);
             this.pnlSettings.Location = new System.Drawing.Point(323, 12);
             this.pnlSettings.Name = "pnlSettings";
             this.pnlSettings.Size = new System.Drawing.Size(313, 210);
             this.pnlSettings.TabIndex = 6;
             // 
-            // cBoxSpect
+            // cBoxDeviceType
             // 
-            this.cBoxSpect.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cBoxSpect.FormattingEnabled = true;
-            this.cBoxSpect.Location = new System.Drawing.Point(99, 1);
-            this.cBoxSpect.Margin = new System.Windows.Forms.Padding(2);
-            this.cBoxSpect.Name = "cBoxSpect";
-            this.cBoxSpect.Size = new System.Drawing.Size(108, 21);
-            this.cBoxSpect.TabIndex = 0;
+            this.cBoxDeviceType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cBoxDeviceType.FormattingEnabled = true;
+            this.cBoxDeviceType.Location = new System.Drawing.Point(99, 1);
+            this.cBoxDeviceType.Margin = new System.Windows.Forms.Padding(2);
+            this.cBoxDeviceType.Name = "cBoxDeviceType";
+            this.cBoxDeviceType.Size = new System.Drawing.Size(108, 21);
+            this.cBoxDeviceType.TabIndex = 0;
             // 
-            // chBoxAdaptation
+            // chBoxETAdaptation
             // 
-            this.chBoxAdaptation.AutoSize = true;
-            this.chBoxAdaptation.Location = new System.Drawing.Point(231, 81);
-            this.chBoxAdaptation.Name = "chBoxAdaptation";
-            this.chBoxAdaptation.Size = new System.Drawing.Size(15, 14);
-            this.chBoxAdaptation.TabIndex = 8;
-            this.toolTip1.SetToolTip(this.chBoxAdaptation, "Allow exposure time adaptation.");
-            this.chBoxAdaptation.UseVisualStyleBackColor = true;
-            this.chBoxAdaptation.CheckedChanged += new System.EventHandler(this.ChBoxAdaptation_CheckedChanged);
+            this.chBoxETAdaptation.AutoSize = true;
+            this.chBoxETAdaptation.Location = new System.Drawing.Point(231, 81);
+            this.chBoxETAdaptation.Name = "chBoxETAdaptation";
+            this.chBoxETAdaptation.Size = new System.Drawing.Size(15, 14);
+            this.chBoxETAdaptation.TabIndex = 8;
+            this.toolTip1.SetToolTip(this.chBoxETAdaptation, "Allow exposure time adaptation.");
+            this.chBoxETAdaptation.UseVisualStyleBackColor = true;
+            this.chBoxETAdaptation.CheckedChanged += new System.EventHandler(this.ChBoxAdaptation_CheckedChanged);
             // 
             // chBoxSave
             // 
@@ -162,14 +162,14 @@
             this.chBoxRewrite.UseVisualStyleBackColor = true;
             this.chBoxRewrite.CheckedChanged += new System.EventHandler(this.ChBoxRwt_CheckedChanged);
             // 
-            // tBoxIndex
+            // tBoxFilenameIndex
             // 
-            this.tBoxIndex.Enabled = false;
-            this.tBoxIndex.Location = new System.Drawing.Point(252, 27);
-            this.tBoxIndex.Name = "tBoxIndex";
-            this.tBoxIndex.Size = new System.Drawing.Size(50, 20);
-            this.tBoxIndex.TabIndex = 6;
-            this.tBoxIndex.Text = "00000";
+            this.tBoxFilenameIndex.Enabled = false;
+            this.tBoxFilenameIndex.Location = new System.Drawing.Point(252, 27);
+            this.tBoxFilenameIndex.Name = "tBoxFilenameIndex";
+            this.tBoxFilenameIndex.Size = new System.Drawing.Size(50, 20);
+            this.tBoxFilenameIndex.TabIndex = 6;
+            this.tBoxFilenameIndex.Text = "00000";
             // 
             // tBoxFilename
             // 
@@ -181,51 +181,51 @@
             this.toolTip1.SetToolTip(this.tBoxFilename, "Double-click to open a folder browser dialog");
             this.tBoxFilename.DoubleClick += new System.EventHandler(this.TBoxFilename_DoubleClick);
             // 
-            // lblAdaptation
+            // lblETAdaptation
             // 
-            this.lblAdaptation.Location = new System.Drawing.Point(156, 78);
-            this.lblAdaptation.Name = "lblAdaptation";
-            this.lblAdaptation.Size = new System.Drawing.Size(69, 20);
-            this.lblAdaptation.TabIndex = 12;
-            this.lblAdaptation.Text = "...adaptation";
-            this.lblAdaptation.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.toolTip1.SetToolTip(this.lblAdaptation, "Exposure time adaptation");
+            this.lblETAdaptation.Location = new System.Drawing.Point(156, 78);
+            this.lblETAdaptation.Name = "lblETAdaptation";
+            this.lblETAdaptation.Size = new System.Drawing.Size(69, 20);
+            this.lblETAdaptation.TabIndex = 12;
+            this.lblETAdaptation.Text = "...adaptation";
+            this.lblETAdaptation.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.toolTip1.SetToolTip(this.lblETAdaptation, "Exposure time adaptation");
             // 
-            // tBoxAdaptation
+            // tBoxETAdaptation
             // 
-            this.tBoxAdaptation.Enabled = false;
-            this.tBoxAdaptation.Location = new System.Drawing.Point(252, 78);
-            this.tBoxAdaptation.Name = "tBoxAdaptation";
-            this.tBoxAdaptation.Size = new System.Drawing.Size(50, 20);
-            this.tBoxAdaptation.TabIndex = 9;
-            this.tBoxAdaptation.Tag = "";
-            this.toolTip1.SetToolTip(this.tBoxAdaptation, "Maximal exposure time allowed.");
+            this.tBoxETAdaptation.Enabled = false;
+            this.tBoxETAdaptation.Location = new System.Drawing.Point(252, 78);
+            this.tBoxETAdaptation.Name = "tBoxETAdaptation";
+            this.tBoxETAdaptation.Size = new System.Drawing.Size(50, 20);
+            this.tBoxETAdaptation.TabIndex = 9;
+            this.tBoxETAdaptation.Tag = "";
+            this.toolTip1.SetToolTip(this.tBoxETAdaptation, "Maximal exposure time allowed.");
             // 
-            // lblSetFM
+            // lblFilename
             // 
-            this.lblSetFM.Location = new System.Drawing.Point(3, 104);
-            this.lblSetFM.Name = "lblSetFM";
-            this.lblSetFM.Size = new System.Drawing.Size(91, 20);
-            this.lblSetFM.TabIndex = 15;
-            this.lblSetFM.Text = "Filename";
-            this.lblSetFM.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblFilename.Location = new System.Drawing.Point(3, 104);
+            this.lblFilename.Name = "lblFilename";
+            this.lblFilename.Size = new System.Drawing.Size(91, 20);
+            this.lblFilename.TabIndex = 15;
+            this.lblFilename.Text = "Filename";
+            this.lblFilename.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // lblSpect
+            // lblDeviceType
             // 
-            this.lblSpect.Location = new System.Drawing.Point(3, 2);
-            this.lblSpect.Name = "lblSpect";
-            this.lblSpect.Size = new System.Drawing.Size(91, 20);
-            this.lblSpect.TabIndex = 17;
-            this.lblSpect.Text = "Select device";
-            this.lblSpect.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblDeviceType.Location = new System.Drawing.Point(3, 2);
+            this.lblDeviceType.Name = "lblDeviceType";
+            this.lblDeviceType.Size = new System.Drawing.Size(91, 20);
+            this.lblDeviceType.TabIndex = 17;
+            this.lblDeviceType.Text = "Device type";
+            this.lblDeviceType.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // tboxSpect
+            // tboxSelectSpectrometer
             // 
-            this.tboxSpect.Location = new System.Drawing.Point(100, 27);
-            this.tboxSpect.Name = "tboxSpect";
-            this.tboxSpect.Size = new System.Drawing.Size(50, 20);
-            this.tboxSpect.TabIndex = 1;
-            this.tboxSpect.Text = "0";
+            this.tboxSelectSpectrometer.Location = new System.Drawing.Point(100, 27);
+            this.tboxSelectSpectrometer.Name = "tboxSelectSpectrometer";
+            this.tboxSelectSpectrometer.Size = new System.Drawing.Size(50, 20);
+            this.tboxSelectSpectrometer.TabIndex = 1;
+            this.tboxSelectSpectrometer.Text = "0";
             // 
             // tBoxAverage
             // 
@@ -236,38 +236,38 @@
             this.tBoxAverage.Text = "1";
             this.toolTip1.SetToolTip(this.tBoxAverage, "Number of periods to average.");
             // 
-            // lblSetSpect
+            // lblSelectSpectrometer
             // 
-            this.lblSetSpect.Location = new System.Drawing.Point(3, 26);
-            this.lblSetSpect.Name = "lblSetSpect";
-            this.lblSetSpect.Size = new System.Drawing.Size(91, 20);
-            this.lblSetSpect.TabIndex = 0;
-            this.lblSetSpect.Text = "Spectrometer";
-            this.lblSetSpect.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblSelectSpectrometer.Location = new System.Drawing.Point(3, 26);
+            this.lblSelectSpectrometer.Name = "lblSelectSpectrometer";
+            this.lblSelectSpectrometer.Size = new System.Drawing.Size(91, 20);
+            this.lblSelectSpectrometer.TabIndex = 0;
+            this.lblSelectSpectrometer.Text = "Spectrometer";
+            this.lblSelectSpectrometer.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // tBoxExpTime
+            // tBoxExposureTime
             // 
-            this.tBoxExpTime.Location = new System.Drawing.Point(99, 79);
-            this.tBoxExpTime.Name = "tBoxExpTime";
-            this.tBoxExpTime.Size = new System.Drawing.Size(50, 20);
-            this.tBoxExpTime.TabIndex = 3;
-            this.toolTip1.SetToolTip(this.tBoxExpTime, "Actual exposure time");
+            this.tBoxExposureTime.Location = new System.Drawing.Point(99, 79);
+            this.tBoxExposureTime.Name = "tBoxExposureTime";
+            this.tBoxExposureTime.Size = new System.Drawing.Size(50, 20);
+            this.tBoxExposureTime.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.tBoxExposureTime, "Actual exposure time");
             // 
-            // lblSetExp
+            // lblExposureTime
             // 
-            this.lblSetExp.Location = new System.Drawing.Point(3, 78);
-            this.lblSetExp.Name = "lblSetExp";
-            this.lblSetExp.Size = new System.Drawing.Size(91, 20);
-            this.lblSetExp.TabIndex = 4;
-            this.lblSetExp.Text = "Exposure time";
-            this.lblSetExp.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblExposureTime.Location = new System.Drawing.Point(3, 78);
+            this.lblExposureTime.Name = "lblExposureTime";
+            this.lblExposureTime.Size = new System.Drawing.Size(91, 20);
+            this.lblExposureTime.TabIndex = 4;
+            this.lblExposureTime.Text = "Exposure time";
+            this.lblExposureTime.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // tBoxPeriod
+            // tBoxPeriodLength
             // 
-            this.tBoxPeriod.Location = new System.Drawing.Point(99, 53);
-            this.tBoxPeriod.Name = "tBoxPeriod";
-            this.tBoxPeriod.Size = new System.Drawing.Size(50, 20);
-            this.tBoxPeriod.TabIndex = 2;
+            this.tBoxPeriodLength.Location = new System.Drawing.Point(99, 53);
+            this.tBoxPeriodLength.Name = "tBoxPeriodLength";
+            this.tBoxPeriodLength.Size = new System.Drawing.Size(50, 20);
+            this.tBoxPeriodLength.TabIndex = 2;
             // 
             // lblSave
             // 
@@ -278,24 +278,24 @@
             this.lblSave.Text = "Save";
             this.lblSave.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // lblRwt
+            // lblRewrite
             // 
-            this.lblRwt.Location = new System.Drawing.Point(156, 26);
-            this.lblRwt.Name = "lblRwt";
-            this.lblRwt.Size = new System.Drawing.Size(69, 20);
-            this.lblRwt.TabIndex = 6;
-            this.lblRwt.Text = "Rewrite";
-            this.lblRwt.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblRewrite.Location = new System.Drawing.Point(156, 26);
+            this.lblRewrite.Name = "lblRewrite";
+            this.lblRewrite.Size = new System.Drawing.Size(69, 20);
+            this.lblRewrite.TabIndex = 6;
+            this.lblRewrite.Text = "Rewrite";
+            this.lblRewrite.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // lblPeriod
+            // lblPeriodLength
             // 
-            this.lblPeriod.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.lblPeriod.Location = new System.Drawing.Point(3, 52);
-            this.lblPeriod.Name = "lblPeriod";
-            this.lblPeriod.Size = new System.Drawing.Size(91, 20);
-            this.lblPeriod.TabIndex = 2;
-            this.lblPeriod.Text = "Period read";
-            this.lblPeriod.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblPeriodLength.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.lblPeriodLength.Location = new System.Drawing.Point(3, 52);
+            this.lblPeriodLength.Name = "lblPeriodLength";
+            this.lblPeriodLength.Size = new System.Drawing.Size(91, 20);
+            this.lblPeriodLength.TabIndex = 2;
+            this.lblPeriodLength.Text = "Period length";
+            this.lblPeriodLength.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // lblAverage
             // 
@@ -306,15 +306,15 @@
             this.lblAverage.Text = "Average";
             this.lblAverage.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // btnConfig
+            // btnReloadConfig
             // 
-            this.btnConfig.Location = new System.Drawing.Point(12, 156);
-            this.btnConfig.Name = "btnConfig";
-            this.btnConfig.Size = new System.Drawing.Size(100, 30);
-            this.btnConfig.TabIndex = 11;
-            this.btnConfig.Text = "&Reload config";
-            this.btnConfig.UseVisualStyleBackColor = true;
-            this.btnConfig.Click += new System.EventHandler(this.BtnConfig_Click);
+            this.btnReloadConfig.Location = new System.Drawing.Point(12, 156);
+            this.btnReloadConfig.Name = "btnReloadConfig";
+            this.btnReloadConfig.Size = new System.Drawing.Size(100, 30);
+            this.btnReloadConfig.TabIndex = 11;
+            this.btnReloadConfig.Text = "&Reload config";
+            this.btnReloadConfig.UseVisualStyleBackColor = true;
+            this.btnReloadConfig.Click += new System.EventHandler(this.BtnReloadConfig_Click);
             // 
             // tBoxLog
             // 
@@ -347,25 +347,25 @@
             this.btnExit.UseVisualStyleBackColor = true;
             this.btnExit.Click += new System.EventHandler(this.BtnExit_Click);
             // 
-            // btnInit
+            // btnInitialize
             // 
-            this.btnInit.Location = new System.Drawing.Point(12, 12);
-            this.btnInit.Name = "btnInit";
-            this.btnInit.Size = new System.Drawing.Size(100, 30);
-            this.btnInit.TabIndex = 0;
-            this.btnInit.Text = "Init_default";
-            this.btnInit.UseVisualStyleBackColor = true;
-            this.btnInit.Click += new System.EventHandler(this.BtnInit_Click);
+            this.btnInitialize.Location = new System.Drawing.Point(12, 12);
+            this.btnInitialize.Name = "btnInitialize";
+            this.btnInitialize.Size = new System.Drawing.Size(100, 30);
+            this.btnInitialize.TabIndex = 0;
+            this.btnInitialize.Text = "Initialize_default";
+            this.btnInitialize.UseVisualStyleBackColor = true;
+            this.btnInitialize.Click += new System.EventHandler(this.BtnInitialize_Click);
             // 
-            // btnMeas
+            // btnMeasure
             // 
-            this.btnMeas.Location = new System.Drawing.Point(12, 48);
-            this.btnMeas.Name = "btnMeas";
-            this.btnMeas.Size = new System.Drawing.Size(100, 30);
-            this.btnMeas.TabIndex = 1;
-            this.btnMeas.Text = "Meas_default";
-            this.btnMeas.UseVisualStyleBackColor = true;
-            this.btnMeas.Click += new System.EventHandler(this.BtnMeas_Click);
+            this.btnMeasure.Location = new System.Drawing.Point(12, 48);
+            this.btnMeasure.Name = "btnMeasure";
+            this.btnMeasure.Size = new System.Drawing.Size(100, 30);
+            this.btnMeasure.TabIndex = 1;
+            this.btnMeasure.Text = "Measure_default";
+            this.btnMeasure.UseVisualStyleBackColor = true;
+            this.btnMeasure.Click += new System.EventHandler(this.BtnMeasure_Click);
             // 
             // toolTip1
             // 
@@ -373,32 +373,32 @@
             this.toolTip1.InitialDelay = 200;
             this.toolTip1.ReshowDelay = 100;
             // 
-            // tBoxD
+            // tBoxPID_D
             // 
-            this.tBoxD.Location = new System.Drawing.Point(206, 27);
-            this.tBoxD.Name = "tBoxD";
-            this.tBoxD.Size = new System.Drawing.Size(50, 20);
-            this.tBoxD.TabIndex = 8;
-            this.tBoxD.Text = "10";
-            this.toolTip1.SetToolTip(this.tBoxD, "D");
+            this.tBoxPID_D.Location = new System.Drawing.Point(206, 27);
+            this.tBoxPID_D.Name = "tBoxPID_D";
+            this.tBoxPID_D.Size = new System.Drawing.Size(50, 20);
+            this.tBoxPID_D.TabIndex = 8;
+            this.tBoxPID_D.Text = "10";
+            this.toolTip1.SetToolTip(this.tBoxPID_D, "D");
             // 
-            // tBoxP
+            // tBoxPID_P
             // 
-            this.tBoxP.Location = new System.Drawing.Point(112, 27);
-            this.tBoxP.Name = "tBoxP";
-            this.tBoxP.Size = new System.Drawing.Size(41, 20);
-            this.tBoxP.TabIndex = 6;
-            this.tBoxP.Text = "250";
-            this.toolTip1.SetToolTip(this.tBoxP, "P");
+            this.tBoxPID_P.Location = new System.Drawing.Point(112, 27);
+            this.tBoxPID_P.Name = "tBoxPID_P";
+            this.tBoxPID_P.Size = new System.Drawing.Size(41, 20);
+            this.tBoxPID_P.TabIndex = 6;
+            this.tBoxPID_P.Text = "250";
+            this.toolTip1.SetToolTip(this.tBoxPID_P, "P");
             // 
-            // tBoxI
+            // tBoxPID_I
             // 
-            this.tBoxI.Location = new System.Drawing.Point(159, 27);
-            this.tBoxI.Name = "tBoxI";
-            this.tBoxI.Size = new System.Drawing.Size(41, 20);
-            this.tBoxI.TabIndex = 7;
-            this.tBoxI.Text = "300";
-            this.toolTip1.SetToolTip(this.tBoxI, "I");
+            this.tBoxPID_I.Location = new System.Drawing.Point(159, 27);
+            this.tBoxPID_I.Name = "tBoxPID_I";
+            this.tBoxPID_I.Size = new System.Drawing.Size(41, 20);
+            this.tBoxPID_I.TabIndex = 7;
+            this.tBoxPID_I.Text = "300";
+            this.toolTip1.SetToolTip(this.tBoxPID_I, "I");
             // 
             // shapeContainer1
             // 
@@ -407,7 +407,7 @@
             this.shapeContainer1.Name = "shapeContainer1";
             this.shapeContainer1.Shapes.AddRange(new Microsoft.VisualBasic.PowerPacks.Shape[] {
             this.lineShape1});
-            this.shapeContainer1.Size = new System.Drawing.Size(913, 596);
+            this.shapeContainer1.Size = new System.Drawing.Size(913, 699);
             this.shapeContainer1.TabIndex = 6;
             this.shapeContainer1.TabStop = false;
             // 
@@ -421,56 +421,56 @@
             // 
             // pnl2
             // 
-            this.pnl2.Controls.Add(this.lblSwitch);
-            this.pnl2.Controls.Add(this.tBoxVChange);
-            this.pnl2.Controls.Add(this.tBoxSP);
+            this.pnl2.Controls.Add(this.lblLED);
+            this.pnl2.Controls.Add(this.tBoxVoltageStep);
+            this.pnl2.Controls.Add(this.tBoxSetpoint);
             this.pnl2.Controls.Add(this.tBoxPIDAverage);
-            this.pnl2.Controls.Add(this.tBoxVoltage);
+            this.pnl2.Controls.Add(this.tBoxOutputVoltage);
             this.pnl2.Controls.Add(this.tBoxRamp);
-            this.pnl2.Controls.Add(this.tBoxD);
+            this.pnl2.Controls.Add(this.tBoxPID_D);
             this.pnl2.Controls.Add(this.chBoxPID);
-            this.pnl2.Controls.Add(this.tBoxP);
-            this.pnl2.Controls.Add(this.tBoxI);
-            this.pnl2.Controls.Add(this.btnSave);
-            this.pnl2.Controls.Add(this.lblTemp);
+            this.pnl2.Controls.Add(this.tBoxPID_P);
+            this.pnl2.Controls.Add(this.tBoxPID_I);
+            this.pnl2.Controls.Add(this.btnSaveTemperatures);
+            this.pnl2.Controls.Add(this.lblSetpoint);
             this.pnl2.Controls.Add(this.lblInfo);
             this.pnl2.Controls.Add(this.lblPIDAverage);
-            this.pnl2.Controls.Add(this.lblStep);
-            this.pnl2.Controls.Add(this.lblVoltage);
+            this.pnl2.Controls.Add(this.lblVoltageStep);
+            this.pnl2.Controls.Add(this.lblOutputVoltage);
             this.pnl2.Controls.Add(this.lblRamp);
-            this.pnl2.Controls.Add(this.btnLoad);
+            this.pnl2.Controls.Add(this.btnLoadSpectra);
             this.pnl2.Controls.Add(this.btnClear);
-            this.pnl2.Controls.Add(this.cBoxCalib);
+            this.pnl2.Controls.Add(this.cBoxCalibration);
             this.pnl2.Controls.Add(this.btnSwitch);
-            this.pnl2.Controls.Add(this.btnCalib);
+            this.pnl2.Controls.Add(this.btnPlotCalibration);
             this.pnl2.Location = new System.Drawing.Point(642, 12);
             this.pnl2.Name = "pnl2";
             this.pnl2.Size = new System.Drawing.Size(262, 210);
             this.pnl2.TabIndex = 7;
             // 
-            // lblSwitch
+            // lblLED
             // 
-            this.lblSwitch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.lblSwitch.Location = new System.Drawing.Point(218, 180);
-            this.lblSwitch.Name = "lblSwitch";
-            this.lblSwitch.Size = new System.Drawing.Size(38, 30);
-            this.lblSwitch.TabIndex = 12;
+            this.lblLED.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblLED.Location = new System.Drawing.Point(218, 180);
+            this.lblLED.Name = "lblLED";
+            this.lblLED.Size = new System.Drawing.Size(38, 30);
+            this.lblLED.TabIndex = 12;
             // 
-            // tBoxVChange
+            // tBoxVoltageStep
             // 
-            this.tBoxVChange.Location = new System.Drawing.Point(149, 133);
-            this.tBoxVChange.Name = "tBoxVChange";
-            this.tBoxVChange.Size = new System.Drawing.Size(31, 20);
-            this.tBoxVChange.TabIndex = 11;
-            this.tBoxVChange.Text = "0.1";
+            this.tBoxVoltageStep.Location = new System.Drawing.Point(149, 133);
+            this.tBoxVoltageStep.Name = "tBoxVoltageStep";
+            this.tBoxVoltageStep.Size = new System.Drawing.Size(31, 20);
+            this.tBoxVoltageStep.TabIndex = 11;
+            this.tBoxVoltageStep.Text = "0.1";
             // 
-            // tBoxSP
+            // tBoxSetpoint
             // 
-            this.tBoxSP.Location = new System.Drawing.Point(206, 53);
-            this.tBoxSP.Name = "tBoxSP";
-            this.tBoxSP.Size = new System.Drawing.Size(50, 20);
-            this.tBoxSP.TabIndex = 9;
-            this.tBoxSP.Text = "20";
+            this.tBoxSetpoint.Location = new System.Drawing.Point(206, 53);
+            this.tBoxSetpoint.Name = "tBoxSetpoint";
+            this.tBoxSetpoint.Size = new System.Drawing.Size(50, 20);
+            this.tBoxSetpoint.TabIndex = 9;
+            this.tBoxSetpoint.Text = "20";
             // 
             // tBoxPIDAverage
             // 
@@ -480,13 +480,13 @@
             this.tBoxPIDAverage.TabIndex = 11;
             this.tBoxPIDAverage.Text = "3";
             // 
-            // tBoxVoltage
+            // tBoxOutputVoltage
             // 
-            this.tBoxVoltage.Location = new System.Drawing.Point(206, 105);
-            this.tBoxVoltage.Name = "tBoxVoltage";
-            this.tBoxVoltage.Size = new System.Drawing.Size(50, 20);
-            this.tBoxVoltage.TabIndex = 11;
-            this.tBoxVoltage.Text = "3";
+            this.tBoxOutputVoltage.Location = new System.Drawing.Point(206, 105);
+            this.tBoxOutputVoltage.Name = "tBoxOutputVoltage";
+            this.tBoxOutputVoltage.Size = new System.Drawing.Size(50, 20);
+            this.tBoxOutputVoltage.TabIndex = 11;
+            this.tBoxOutputVoltage.Text = "3";
             // 
             // tBoxRamp
             // 
@@ -508,24 +508,24 @@
             this.chBoxPID.UseVisualStyleBackColor = true;
             this.chBoxPID.CheckedChanged += new System.EventHandler(this.ChBoxPID_CheckedChanged);
             // 
-            // btnSave
+            // btnSaveTemperatures
             // 
-            this.btnSave.Location = new System.Drawing.Point(3, 0);
-            this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(100, 30);
-            this.btnSave.TabIndex = 0;
-            this.btnSave.Text = "&Save temps";
-            this.btnSave.UseVisualStyleBackColor = true;
-            this.btnSave.Click += new System.EventHandler(this.BtnSave_Click);
+            this.btnSaveTemperatures.Location = new System.Drawing.Point(3, 0);
+            this.btnSaveTemperatures.Name = "btnSaveTemperatures";
+            this.btnSaveTemperatures.Size = new System.Drawing.Size(100, 30);
+            this.btnSaveTemperatures.TabIndex = 0;
+            this.btnSaveTemperatures.Text = "&Save temps";
+            this.btnSaveTemperatures.UseVisualStyleBackColor = true;
+            this.btnSaveTemperatures.Click += new System.EventHandler(this.BtnSaveTemperatures_Click);
             // 
-            // lblTemp
+            // lblSetpoint
             // 
-            this.lblTemp.Location = new System.Drawing.Point(109, 52);
-            this.lblTemp.Name = "lblTemp";
-            this.lblTemp.Size = new System.Drawing.Size(91, 20);
-            this.lblTemp.TabIndex = 0;
-            this.lblTemp.Text = "Temp setpoint";
-            this.lblTemp.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblSetpoint.Location = new System.Drawing.Point(109, 52);
+            this.lblSetpoint.Name = "lblSetpoint";
+            this.lblSetpoint.Size = new System.Drawing.Size(91, 20);
+            this.lblSetpoint.TabIndex = 0;
+            this.lblSetpoint.Text = "Temp setpoint";
+            this.lblSetpoint.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // lblInfo
             // 
@@ -545,23 +545,23 @@
             this.lblPIDAverage.Text = "#Avg";
             this.lblPIDAverage.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // lblStep
+            // lblVoltageStep
             // 
-            this.lblStep.Location = new System.Drawing.Point(109, 131);
-            this.lblStep.Name = "lblStep";
-            this.lblStep.Size = new System.Drawing.Size(34, 20);
-            this.lblStep.TabIndex = 0;
-            this.lblStep.Text = "MΔV";
-            this.lblStep.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblVoltageStep.Location = new System.Drawing.Point(109, 131);
+            this.lblVoltageStep.Name = "lblVoltageStep";
+            this.lblVoltageStep.Size = new System.Drawing.Size(34, 20);
+            this.lblVoltageStep.TabIndex = 0;
+            this.lblVoltageStep.Text = "MΔV";
+            this.lblVoltageStep.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // lblVoltage
+            // lblOutputVoltage
             // 
-            this.lblVoltage.Location = new System.Drawing.Point(109, 104);
-            this.lblVoltage.Name = "lblVoltage";
-            this.lblVoltage.Size = new System.Drawing.Size(91, 20);
-            this.lblVoltage.TabIndex = 0;
-            this.lblVoltage.Text = "Output voltage";
-            this.lblVoltage.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblOutputVoltage.Location = new System.Drawing.Point(109, 104);
+            this.lblOutputVoltage.Name = "lblOutputVoltage";
+            this.lblOutputVoltage.Size = new System.Drawing.Size(91, 20);
+            this.lblOutputVoltage.TabIndex = 0;
+            this.lblOutputVoltage.Text = "Output voltage";
+            this.lblOutputVoltage.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // lblRamp
             // 
@@ -572,15 +572,15 @@
             this.lblRamp.Text = "Ramp (°C / min)";
             this.lblRamp.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // btnLoad
+            // btnLoadSpectra
             // 
-            this.btnLoad.Location = new System.Drawing.Point(3, 36);
-            this.btnLoad.Name = "btnLoad";
-            this.btnLoad.Size = new System.Drawing.Size(100, 30);
-            this.btnLoad.TabIndex = 1;
-            this.btnLoad.Text = "&Load spectra";
-            this.btnLoad.UseVisualStyleBackColor = true;
-            this.btnLoad.Click += new System.EventHandler(this.BtnLoad_Click);
+            this.btnLoadSpectra.Location = new System.Drawing.Point(3, 36);
+            this.btnLoadSpectra.Name = "btnLoadSpectra";
+            this.btnLoadSpectra.Size = new System.Drawing.Size(100, 30);
+            this.btnLoadSpectra.TabIndex = 1;
+            this.btnLoadSpectra.Text = "&Load spectra";
+            this.btnLoadSpectra.UseVisualStyleBackColor = true;
+            this.btnLoadSpectra.Click += new System.EventHandler(this.BtnLoadSpectra_Click);
             // 
             // btnClear
             // 
@@ -592,16 +592,16 @@
             this.btnClear.UseVisualStyleBackColor = true;
             this.btnClear.Click += new System.EventHandler(this.BtnClear_Click);
             // 
-            // cBoxCalib
+            // cBoxCalibration
             // 
-            this.cBoxCalib.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cBoxCalib.FormattingEnabled = true;
-            this.cBoxCalib.Location = new System.Drawing.Point(3, 112);
-            this.cBoxCalib.Margin = new System.Windows.Forms.Padding(2);
-            this.cBoxCalib.Name = "cBoxCalib";
-            this.cBoxCalib.Size = new System.Drawing.Size(100, 21);
-            this.cBoxCalib.TabIndex = 3;
-            this.cBoxCalib.SelectedIndexChanged += new System.EventHandler(this.CBoxCalib_SelectedIndexChanged);
+            this.cBoxCalibration.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cBoxCalibration.FormattingEnabled = true;
+            this.cBoxCalibration.Location = new System.Drawing.Point(3, 112);
+            this.cBoxCalibration.Margin = new System.Windows.Forms.Padding(2);
+            this.cBoxCalibration.Name = "cBoxCalibration";
+            this.cBoxCalibration.Size = new System.Drawing.Size(100, 21);
+            this.cBoxCalibration.TabIndex = 3;
+            this.cBoxCalibration.SelectedIndexChanged += new System.EventHandler(this.CBoxCalibration_SelectedIndexChanged);
             // 
             // btnSwitch
             // 
@@ -609,29 +609,29 @@
             this.btnSwitch.Name = "btnSwitch";
             this.btnSwitch.Size = new System.Drawing.Size(100, 30);
             this.btnSwitch.TabIndex = 4;
-            this.btnSwitch.Text = "Swit_default";
+            this.btnSwitch.Text = "Switch_default";
             this.btnSwitch.UseVisualStyleBackColor = true;
             this.btnSwitch.Click += new System.EventHandler(this.BtnSwitch_Click);
             // 
-            // btnCalib
+            // btnPlotCalibration
             // 
-            this.btnCalib.Location = new System.Drawing.Point(3, 144);
-            this.btnCalib.Name = "btnCalib";
-            this.btnCalib.Size = new System.Drawing.Size(100, 30);
-            this.btnCalib.TabIndex = 4;
-            this.btnCalib.Text = "Sho&w calibration";
-            this.btnCalib.UseVisualStyleBackColor = true;
-            this.btnCalib.Click += new System.EventHandler(this.BtnCalib_Click);
+            this.btnPlotCalibration.Location = new System.Drawing.Point(3, 144);
+            this.btnPlotCalibration.Name = "btnPlotCalibration";
+            this.btnPlotCalibration.Size = new System.Drawing.Size(100, 30);
+            this.btnPlotCalibration.TabIndex = 4;
+            this.btnPlotCalibration.Text = "Pl&ot calibration";
+            this.btnPlotCalibration.UseVisualStyleBackColor = true;
+            this.btnPlotCalibration.Click += new System.EventHandler(this.BtnPlotCalibration_Click);
             // 
-            // btnSize
+            // btnDefaultSize
             // 
-            this.btnSize.Location = new System.Drawing.Point(12, 120);
-            this.btnSize.Name = "btnSize";
-            this.btnSize.Size = new System.Drawing.Size(100, 30);
-            this.btnSize.TabIndex = 3;
-            this.btnSize.Text = "&Default size";
-            this.btnSize.UseVisualStyleBackColor = true;
-            this.btnSize.Click += new System.EventHandler(this.BtnSize_Click);
+            this.btnDefaultSize.Location = new System.Drawing.Point(12, 120);
+            this.btnDefaultSize.Name = "btnDefaultSize";
+            this.btnDefaultSize.Size = new System.Drawing.Size(100, 30);
+            this.btnDefaultSize.TabIndex = 3;
+            this.btnDefaultSize.Text = "&Default size";
+            this.btnDefaultSize.UseVisualStyleBackColor = true;
+            this.btnDefaultSize.Click += new System.EventHandler(this.BtnDefaultSize_Click);
             // 
             // formsPlot1
             // 
@@ -654,18 +654,18 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(913, 596);
+            this.ClientSize = new System.Drawing.Size(913, 699);
             this.Controls.Add(this.formsPlot2);
             this.Controls.Add(this.formsPlot1);
-            this.Controls.Add(this.btnConfig);
-            this.Controls.Add(this.btnSize);
+            this.Controls.Add(this.btnReloadConfig);
+            this.Controls.Add(this.btnDefaultSize);
             this.Controls.Add(this.pnl2);
             this.Controls.Add(this.pnlSettings);
             this.Controls.Add(this.tBoxLog);
             this.Controls.Add(this.btnHelp);
             this.Controls.Add(this.btnExit);
-            this.Controls.Add(this.btnInit);
-            this.Controls.Add(this.btnMeas);
+            this.Controls.Add(this.btnInitialize);
+            this.Controls.Add(this.btnMeasure);
             this.Controls.Add(this.shapeContainer1);
             this.Margin = new System.Windows.Forms.Padding(2);
             this.MinimumSize = new System.Drawing.Size(646, 273);
@@ -689,57 +689,57 @@
         internal System.Windows.Forms.Panel pnlSettings;
         internal System.Windows.Forms.CheckBox chBoxRewrite;
         internal System.Windows.Forms.TextBox tBoxFilename;
-        internal System.Windows.Forms.TextBox tBoxPeriod;
-        internal System.Windows.Forms.TextBox tBoxIndex;
-        internal System.Windows.Forms.TextBox tBoxExpTime;
-        internal System.Windows.Forms.TextBox tboxSpect;
-        internal System.Windows.Forms.Label lblSetFM;
-        internal System.Windows.Forms.Label lblPeriod;
-        internal System.Windows.Forms.Label lblRwt;
-        internal System.Windows.Forms.Label lblSetExp;
-        internal System.Windows.Forms.Label lblSetSpect;
+        internal System.Windows.Forms.TextBox tBoxPeriodLength;
+        internal System.Windows.Forms.TextBox tBoxFilenameIndex;
+        internal System.Windows.Forms.TextBox tBoxExposureTime;
+        internal System.Windows.Forms.TextBox tboxSelectSpectrometer;
+        internal System.Windows.Forms.Label lblFilename;
+        internal System.Windows.Forms.Label lblPeriodLength;
+        internal System.Windows.Forms.Label lblRewrite;
+        internal System.Windows.Forms.Label lblExposureTime;
+        internal System.Windows.Forms.Label lblSelectSpectrometer;
         internal System.Windows.Forms.TextBox tBoxLog;
         internal System.Windows.Forms.Button btnHelp;
         internal System.Windows.Forms.Button btnExit;
-        internal System.Windows.Forms.Button btnInit;
-        internal System.Windows.Forms.Button btnMeas;
-        internal System.Windows.Forms.CheckBox chBoxAdaptation;
-        internal System.Windows.Forms.Label lblAdaptation;
-        private System.Windows.Forms.ComboBox cBoxSpect;
-        internal System.Windows.Forms.Label lblSpect;
+        internal System.Windows.Forms.Button btnInitialize;
+        internal System.Windows.Forms.Button btnMeasure;
+        internal System.Windows.Forms.CheckBox chBoxETAdaptation;
+        internal System.Windows.Forms.Label lblETAdaptation;
+        private System.Windows.Forms.ComboBox cBoxDeviceType;
+        internal System.Windows.Forms.Label lblDeviceType;
         internal System.Windows.Forms.Label lblAverage;
         internal System.Windows.Forms.TextBox tBoxAverage;
-        internal System.Windows.Forms.TextBox tBoxAdaptation;
+        internal System.Windows.Forms.TextBox tBoxETAdaptation;
         private System.Windows.Forms.ToolTip toolTip1;
         private Microsoft.VisualBasic.PowerPacks.ShapeContainer shapeContainer1;
         private Microsoft.VisualBasic.PowerPacks.LineShape lineShape1;
         internal System.Windows.Forms.CheckBox chBoxSave;
         internal System.Windows.Forms.Label lblSave;
         private System.Windows.Forms.Panel pnl2;
-        internal System.Windows.Forms.Button btnSize;
-        internal System.Windows.Forms.Button btnCalib;
-        private System.Windows.Forms.ComboBox cBoxCalib;
+        internal System.Windows.Forms.Button btnDefaultSize;
+        internal System.Windows.Forms.Button btnPlotCalibration;
+        private System.Windows.Forms.ComboBox cBoxCalibration;
         internal System.Windows.Forms.Button btnClear;
-        internal System.Windows.Forms.Button btnLoad;
-        internal System.Windows.Forms.Button btnSave;
-        internal System.Windows.Forms.TextBox tBoxP;
-        internal System.Windows.Forms.TextBox tBoxD;
-        internal System.Windows.Forms.TextBox tBoxI;
+        internal System.Windows.Forms.Button btnLoadSpectra;
+        internal System.Windows.Forms.Button btnSaveTemperatures;
+        internal System.Windows.Forms.TextBox tBoxPID_P;
+        internal System.Windows.Forms.TextBox tBoxPID_D;
+        internal System.Windows.Forms.TextBox tBoxPID_I;
         internal System.Windows.Forms.CheckBox chBoxPID;
         internal System.Windows.Forms.TextBox tBoxRamp;
         internal System.Windows.Forms.Label lblRamp;
-        internal System.Windows.Forms.TextBox tBoxSP;
-        internal System.Windows.Forms.Label lblTemp;
+        internal System.Windows.Forms.TextBox tBoxSetpoint;
+        internal System.Windows.Forms.Label lblSetpoint;
         internal System.Windows.Forms.Label lblInfo;
-        internal System.Windows.Forms.TextBox tBoxVoltage;
-        internal System.Windows.Forms.Label lblVoltage;
-        internal System.Windows.Forms.Button btnConfig;
-        internal System.Windows.Forms.TextBox tBoxVChange;
-        internal System.Windows.Forms.Label lblStep;
+        internal System.Windows.Forms.TextBox tBoxOutputVoltage;
+        internal System.Windows.Forms.Label lblOutputVoltage;
+        internal System.Windows.Forms.Button btnReloadConfig;
+        internal System.Windows.Forms.TextBox tBoxVoltageStep;
+        internal System.Windows.Forms.Label lblVoltageStep;
         internal System.Windows.Forms.TextBox tBoxPIDAverage;
         internal System.Windows.Forms.Label lblPIDAverage;
         internal System.Windows.Forms.Button btnSwitch;
-        private System.Windows.Forms.Label lblSwitch;
+        private System.Windows.Forms.Label lblLED;
         private ScottPlot.FormsPlot formsPlot1;
         private ScottPlot.FormsPlot formsPlot2;
     }

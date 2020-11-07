@@ -4,10 +4,17 @@ using System.Linq;
 
 namespace spectrometric_thermometer
 {
+    public interface IMeasurementPlot
+    {
+        double[] Wavelengths { get; }
+        double[] Intensities { get; }
+        Measurement.Fit_graphics FitGraphics { get; }
+    }
+
     /// <summary>
     /// Spectrum measurement data-structure.
     /// </summary>
-    public class Measurement
+    public class Measurement : IMeasurementPlot
     {
         /// <summary>
         /// DateTime.ticks sum.
@@ -97,7 +104,7 @@ namespace spectrometric_thermometer
         /// <summary>
         /// Data for plotting fitting graphics.
         /// </summary>
-        public Fit_Graphics FitGraphics { get; } = new Fit_Graphics()
+        public Fit_graphics FitGraphics { get; } = new Fit_graphics()
         {
             active = false,
         };
@@ -579,7 +586,7 @@ namespace spectrometric_thermometer
         /// Data-structure used in Measurements class.
         /// Store information about fitting graphics.
         /// </summary>
-        public class Fit_Graphics
+        public class Fit_graphics
         {
             /// <summary>
             /// Are the fit parametrs actual?
@@ -618,6 +625,7 @@ namespace spectrometric_thermometer
             /// Start index and length.
             /// </summary>
             public int[] RIndexes;
+
         }
 
         /// <summary>
