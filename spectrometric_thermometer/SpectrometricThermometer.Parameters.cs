@@ -6,17 +6,19 @@ namespace spectrometric_thermometer
     public partial class SpectrometricThermometer
     {
         /// <summary>
-        /// Represents spectrometer parameters needed to measure aa spectrum.
+        /// Represents general parameters.
         /// </summary>
         public struct Parameters
         {
             public Parameters(bool save, bool rewrite, int filenameIndex,
-                float periodLength, int average, float exposureTime, bool adaptation,
-                float adaptationMaxExposureTime, string filename) : this()
+                int filenameIndexLength, float periodLength, int average,
+                float exposureTime, bool adaptation, float adaptationMaxExposureTime,
+                string filename) : this()
             {
                 Save = save;
                 Rewrite = rewrite;
                 FilenameIndex = filenameIndex;
+                FilenameIndexLength = filenameIndexLength;
                 PeriodLength = periodLength;
                 Average = average;
                 ExposureTime = exposureTime;
@@ -25,9 +27,10 @@ namespace spectrometric_thermometer
                 Filename = filename ?? throw new ArgumentNullException(nameof(filename));
             }
 
-            public bool Save { get; private set; }
+            public bool Save { get; }
             public bool Rewrite { get; }
             public int FilenameIndex { get; }
+            public int FilenameIndexLength { get; }
             public float PeriodLength { get; }
             public int Average { get; }
             public float ExposureTime { get; }
@@ -41,7 +44,7 @@ namespace spectrometric_thermometer
             /// <exception cref="ArgumentException">One of the arguments is wrong.</exception>
             /// <param name="save">Do save measured spectra?</param>
             /// <param name="rewrite">Keep rewriting one file or number new ones.</param>
-            /// <param name="filenameIndex">First file number.</param>
+            /// <param name="filenameIndex">First file number. Trailing zeros matter.</param>
             /// <param name="periodLength"></param>
             /// <param name="average">How many spectra to average before handling the results.</param>
             /// <param name="exposureTime"></param>
@@ -64,7 +67,7 @@ namespace spectrometric_thermometer
                 // "save" cannot be wrong.
                 // "rewrite" cannot be wrong.
 
-                int filenameIndexInt = 0;
+                int filenameIndexInt = -1;
                 if (!rewrite)  // Ignore numbering while rewriting.
                 {
                     if (!int.TryParse(filenameIndex, out filenameIndexInt))
@@ -72,7 +75,8 @@ namespace spectrometric_thermometer
                         throw new ArgumentException("Numbering error!" + " Converted value: " + filenameIndexInt + ".");
                     }
                 }
-                
+                int filenameIndexLength = filenameIndex.Length;
+
                 if (!float.TryParse(periodLength, out float periodLengthFloat))
                 {
                     throw new ArgumentException("Period error!" + " Converted value: " + periodLengthFloat + ".");
@@ -86,12 +90,12 @@ namespace spectrometric_thermometer
                 {
                     throw new ArgumentException("Average error!" + " Must be positive.");
                 }
-                
+
                 if (!float.TryParse(exposureTime, out float exposureTimeFloat))
                 {
                     throw new ArgumentException("Exposure time error!" + " Converted value: " + exposureTime + ".");
                 }
-                
+
                 // "adaptation" cannot be wrong.
 
                 if (!float.TryParse(adaptationMaxExposureTime, out float adaptationMaxExposureTimeFloat))
@@ -99,7 +103,6 @@ namespace spectrometric_thermometer
                     throw new ArgumentException("Adaptation time error!" + " Converted value: " + adaptationMaxExposureTime + ".");
                 }
 
-                // Check its validity.
                 if (!IsValidFileNameOrPath(filename))
                 {
                     throw new ArgumentException("Path error!");
@@ -118,8 +121,8 @@ namespace spectrometric_thermometer
                 }
 
                 return new Parameters(save, rewrite, filenameIndexInt,
-                    periodLengthFloat, averageInt, exposureTimeFloat,
-                    adaptation, adaptationMaxExposureTimeFloat, filename);
+                    filenameIndexLength, periodLengthFloat, averageInt,
+                    exposureTimeFloat, adaptation, adaptationMaxExposureTimeFloat, filename);
             }
         }
     }

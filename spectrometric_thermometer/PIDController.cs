@@ -188,8 +188,7 @@ namespace spectrometric_thermometer
     }
 
     /// <summary>
-    /// Data class. Replace oldest value
-    /// if new is added into full buffer.
+    /// Data class. Replace oldest value if new is added into full buffer.
     /// </summary>
     internal class Buffer<T>
     {
@@ -233,10 +232,15 @@ namespace spectrometric_thermometer
                 size = value;
                 // If buffer is overfilled after size change,
                 // delete some items (from the oldest ones).
-                while (values.Count > Size)
-                {
-                    values.RemoveAt(0);
-                }
+                TrimToSize();
+            }
+        }
+
+        private void TrimToSize()
+        {
+            while (values.Count > Size)
+            {
+                values.RemoveAt(0);
             }
         }
 
@@ -259,8 +263,7 @@ namespace spectrometric_thermometer
         /// <param name="value"></param>
         public void Add(T value)
         {
-            if (Full)
-                values.RemoveAt(0);
+            TrimToSize();
             values.Add(value);
         }
     }

@@ -18,7 +18,6 @@
                 components.Dispose();
             }
             base.Dispose(disposing);
-            _container.Dispose();
         }
 
         #region Windows Form Designer generated code
@@ -84,8 +83,8 @@
             this.btnSwitch = new System.Windows.Forms.Button();
             this.btnPlotCalibration = new System.Windows.Forms.Button();
             this.btnDefaultSize = new System.Windows.Forms.Button();
-            this.formsPlot1 = new ScottPlot.FormsPlot();
-            this.formsPlot2 = new ScottPlot.FormsPlot();
+            this.formsPlotLeft = new ScottPlot.FormsPlot();
+            this.formsPlotRight = new ScottPlot.FormsPlot();
             this.pnlSettings.SuspendLayout();
             this.pnl2.SuspendLayout();
             this.SuspendLayout();
@@ -633,30 +632,30 @@
             this.btnDefaultSize.UseVisualStyleBackColor = true;
             this.btnDefaultSize.Click += new System.EventHandler(this.BtnDefaultSize_Click);
             // 
-            // formsPlot1
+            // formsPlotLeft
             // 
-            this.formsPlot1.BackColor = System.Drawing.Color.Transparent;
-            this.formsPlot1.Location = new System.Drawing.Point(12, 246);
-            this.formsPlot1.Name = "formsPlot1";
-            this.formsPlot1.Size = new System.Drawing.Size(446, 446);
-            this.formsPlot1.TabIndex = 12;
+            this.formsPlotLeft.BackColor = System.Drawing.Color.Transparent;
+            this.formsPlotLeft.Location = new System.Drawing.Point(12, 246);
+            this.formsPlotLeft.Name = "formsPlotLeft";
+            this.formsPlotLeft.Size = new System.Drawing.Size(446, 446);
+            this.formsPlotLeft.TabIndex = 12;
             // 
-            // formsPlot2
+            // formsPlotRight
             // 
-            this.formsPlot2.BackColor = System.Drawing.Color.Transparent;
-            this.formsPlot2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.formsPlot2.Location = new System.Drawing.Point(458, 246);
-            this.formsPlot2.Name = "formsPlot2";
-            this.formsPlot2.Size = new System.Drawing.Size(446, 446);
-            this.formsPlot2.TabIndex = 13;
+            this.formsPlotRight.BackColor = System.Drawing.Color.Transparent;
+            this.formsPlotRight.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.formsPlotRight.Location = new System.Drawing.Point(458, 246);
+            this.formsPlotRight.Name = "formsPlotRight";
+            this.formsPlotRight.Size = new System.Drawing.Size(446, 446);
+            this.formsPlotRight.TabIndex = 13;
             // 
             // Form_main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(913, 699);
-            this.Controls.Add(this.formsPlot2);
-            this.Controls.Add(this.formsPlot1);
+            this.Controls.Add(this.formsPlotRight);
+            this.Controls.Add(this.formsPlotLeft);
             this.Controls.Add(this.btnReloadConfig);
             this.Controls.Add(this.btnDefaultSize);
             this.Controls.Add(this.pnl2);
@@ -740,8 +739,8 @@
         internal System.Windows.Forms.Label lblPIDAverage;
         internal System.Windows.Forms.Button btnSwitch;
         private System.Windows.Forms.Label lblLED;
-        private ScottPlot.FormsPlot formsPlot1;
-        private ScottPlot.FormsPlot formsPlot2;
+        private ScottPlot.FormsPlot formsPlotLeft;
+        private ScottPlot.FormsPlot formsPlotRight;
     }
 }
 

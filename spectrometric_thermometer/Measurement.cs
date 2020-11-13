@@ -26,7 +26,7 @@ namespace spectrometric_thermometer
         /// Meant to be divided by spectraLoaded to get average.
         /// </summary>
         private double[] _intensities2Add;
-        private int spectraToLoad = 0;
+        private int _spectraToLoad = 0;
         private int _spectraLoaded = 0;
 
         /// <summary>
@@ -60,13 +60,12 @@ namespace spectrometric_thermometer
         {
             get
             {
-                return spectraToLoad;
+                return _spectraToLoad;
             }
 
             set
             {
-                spectraToLoad = value;
-
+                _spectraToLoad = value;
                 SpectraLoaded = 0;  // Reset.
             }
         }
@@ -104,30 +103,20 @@ namespace spectrometric_thermometer
         /// <summary>
         /// Data for plotting fitting graphics.
         /// </summary>
-        public Fit_graphics FitGraphics { get; } = new Fit_graphics()
-        {
-            active = false,
-        };
+        public Fit_graphics FitGraphics { get; private set; }
 
         /// <summary>
         /// Constants used in FindAbsorbtionEdge(). With defaults.
         /// </summary>
-        public MConstants Constants { get; } = new MConstants
-        {
-            const_skip = 5,
-            const_eps = 1.2,
-            const_smooth1 = 10,
-            const_smooth2 = 10,
-            const_1DHalfW = 20,
-            const_slider = 0,
-        };
-
-        /// <summary>
-        /// Creator.
-        /// </summary>
-        public Measurement()
-        {
-        }
+        public Parameters MParameters { get; } = new Parameters
+        (
+            const_skip: 5,
+            const_eps:  1.2,
+            const_smooth1:  10,
+            const_smooth2:  10,
+            const_1DHalfW:  20,
+            const_slider:  0,
+            absorbtion_edge: "const");
 
         /// <summary>
         /// Find absorbtion edge and convert
@@ -160,20 +149,17 @@ namespace spectrometric_thermometer
         /// <param name="ticks">DataTime.ticks.</param>
         /// <param name="onlyOne">Load data only once. Instead of setting spectraToLoad to one.</param>
         /// <returns>Is it the first package to load?</returns>
-        public bool Load(double[] wavelengths, double[] intensities, long ticks, bool onlyOne = false)
+        public void Load(double[] wavelengths, double[] intensities, long ticks, bool onlyOne = false)
         {
             // Initialize new data.
             if (SpectraLoaded == 0 || onlyOne)
             {
-                FitGraphics.active = false;
-
                 Wavelengths = wavelengths;
                 _intensities2Add = intensities;
                 _ticks2Add = ticks;
 
                 SpectraLoaded = 1;
-                return false;
-
+                //return false;
             }
             // Add new data to already set up object.
             else
@@ -182,7 +168,7 @@ namespace spectrometric_thermometer
                 _ticks2Add += ticks;
 
                 SpectraLoaded++;
-                return true;
+                //return true;
             }
         }
 
@@ -224,7 +210,7 @@ namespace spectrometric_thermometer
             // Interpolation on smoothed intensities.
             var interpolation = MathNet.Numerics.Interpolate.CubicSpline(
                 Wavelengths,
-                Smooth(Intensities, windowHalf: Constants.const_smooth1));
+                Smooth(Intensities, windowHalf: MParameters.Const_smooth1));
             // Max in smoothed first derivative.
             double[] derivative = new double[Wavelengths.Length];
             for (int i = 0; i < Wavelengths.Length; i++)
@@ -232,7 +218,7 @@ namespace spectrometric_thermometer
                 derivative[i] = interpolation.Differentiate(
                     Wavelengths[i]);
             }
-            derivative = Smooth(derivative, windowHalf: Constants.const_smooth2);
+            derivative = Smooth(derivative, windowHalf: MParameters.Const_smooth2);
             {
                 if (IndexMax1D == -1)  // First time => search whole vector.
                 {
@@ -240,11 +226,11 @@ namespace spectrometric_thermometer
                 }
                 else  // Next time in shortened version. Still must be inside the whole one.
                 {
-                    int startIndex = IndexMax1D - Constants.const_1DHalfW;  // Start.
+                    int startIndex = IndexMax1D - MParameters.Const_1DHalfW;  // Start.
                     if (startIndex < 0)
                         startIndex = 0;
 
-                    int len = (2 * Constants.const_1DHalfW) + 1;
+                    int len = (2 * MParameters.Const_1DHalfW) + 1;
                     if (len + startIndex > Wavelengths.Length)
                         len = Wavelengths.Length - startIndex;
 
@@ -261,14 +247,14 @@ namespace spectrometric_thermometer
             double[] poptR = Inchworm(ref iLeft, ref iRight, direction: false);
             // Slide left as long as line or saddle is found.
             // Skip a few points between the two lines.
-            int slider = iLeft - Constants.const_skip;
+            int slider = iLeft - MParameters.Const_skip;
             if (slider < 0)  // Skip only if possible.
                 slider = 0;
             double derivMinimum = derivative[slider];
             while (
                 slider > 0 &&  // No OutOfRange.
                                // Search for line. Puls forgiving slider constant.
-                derivative[slider] <= derivMinimum + Constants.const_slider &&
+                derivative[slider] <= derivMinimum + MParameters.Const_slider &&
                 derivative[slider] >= 0)  // Search for saddle.
             {
                 if (derivative[slider] <= derivMinimum)
@@ -279,7 +265,7 @@ namespace spectrometric_thermometer
             int iLeft2 = slider;
             int iRight2 = slider;
             double[] poptL = null;
-            switch (Constants.absorbtion_edge)
+            switch (MParameters.Absorbtion_edge)
             {
                 case "Inchworm":
                     {
@@ -318,24 +304,23 @@ namespace spectrometric_thermometer
                 absEdge = (poptL[0] - poptR[0]) / (poptR[1] - poptL[1]);
 
                 // FitGraphics.
-                FitGraphics.active = true;
                 Func<double, double[], double> Line = MathNet.Numerics.Polynomial.Evaluate;
 
-                FitGraphics.LL = new PointF((float)LLx, (float)Line(LLx, poptL));
-                FitGraphics.LR = new PointF((float)LRx, (float)Line(LRx, poptL));
-                FitGraphics.RL = new PointF((float)RLx, 0);
-                FitGraphics.RR = new PointF((float)RRx, (float)intensitiesMax);
+                var LL = new PointF((float)LLx, (float)Line(LLx, poptL));
+                var LR = new PointF((float)LRx, (float)Line(LRx, poptL));
+                var RL = new PointF((float)RLx, 0);
+                var RR = new PointF((float)RRx, (float)intensitiesMax);
 
-                FitGraphics.crossing = new PointF((float)absEdge, (float)Line(absEdge, poptR));
+                var crossing = new PointF((float)absEdge, (float)Line(absEdge, poptR));
 
-                FitGraphics.LIndexes = new int[2] { iLeft, iRight - iLeft + 1 };
-                FitGraphics.RIndexes = new int[2] { iLeft2, iRight2 - iLeft2 + 1 };
+                var LIndexes = new int[2] { iLeft, iRight - iLeft + 1 };
+                var RIndexes = new int[2] { iLeft2, iRight2 - iLeft2 + 1 };
+                FitGraphics = new Fit_graphics(LL, LR, RL, RR, crossing, LIndexes, RIndexes);
             }
             else
             {
                 // Next time search again the whole vector.
                 IndexMax1D = -1;
-                FitGraphics.active = false;
             }
             return absEdge;
         }
@@ -449,7 +434,7 @@ namespace spectrometric_thermometer
                 // Eps should go down with number of points.
                 if (epsMax == double.MaxValue)
                 {
-                    epsMax = eps * Constants.const_eps;
+                    epsMax = eps * MParameters.Const_eps;
                 }
             }
 
@@ -513,7 +498,7 @@ namespace spectrometric_thermometer
 
             Fit_Data fit;
 
-            while (rSquareLast < (rSquareMin + Constants.const_eps))
+            while (rSquareLast < (rSquareMin + MParameters.Const_eps))
             {
                 if (direction)
                 {
@@ -528,7 +513,7 @@ namespace spectrometric_thermometer
 
                 fit = Inchworm_fit(iLeftLoc, iRightLoc);
 
-                rSquareLast = Math.Log(1 - fit.rSquared);
+                rSquareLast = Math.Log(1 - fit.RSquared);
 
                 if (rSquareLast < rSquareMin)
                 {
@@ -541,7 +526,7 @@ namespace spectrometric_thermometer
             // Drop the last point.
             if (iLeft < iRight)  // Was the loop ever executed?
             {
-                return Inchworm_fit(iLeft, iRight).popt;
+                return Inchworm_fit(iLeft, iRight).Popt;
             }
             else
             {
@@ -557,8 +542,6 @@ namespace spectrometric_thermometer
         /// <returns>Fit parameters and RSquared.</returns>
         private Fit_Data Inchworm_fit(int iLeft, int iRight)
         {
-            Fit_Data ret = new Fit_Data();
-
             int len = iRight - iLeft + 1;  // Start with three points.
             // Fit line a subarray.
             // Subarrays, where fittting takes place.
@@ -569,101 +552,116 @@ namespace spectrometric_thermometer
             var popt = MathNet.Numerics.Fit.Line(xx, yy);
 
             // Tuple<double, double> to  double[2].
-            ret.popt = new double[] { popt.Item1, popt.Item2 };
+            var _popt = new double[] { popt.Item1, popt.Item2 };
 
             // Goodness of fit.
             double[] yFit = new double[len];
             for (int i = 0; i < len; i++)
             {
-                yFit[i] = MathNet.Numerics.Polynomial.Evaluate(z: Wavelengths[i + iLeft], coefficients: ret.popt);
+                yFit[i] = MathNet.Numerics.Polynomial.Evaluate(z: Wavelengths[i + iLeft], coefficients: _popt);
             }
-            ret.rSquared = MathNet.Numerics.GoodnessOfFit.RSquared(yFit, yy);
+            var _rSquared = MathNet.Numerics.GoodnessOfFit.RSquared(yFit, yy);
 
-            return ret;
+            return new Fit_Data(_popt, _rSquared);
         }
 
         /// <summary>
         /// Data-structure used in Measurements class.
         /// Store information about fitting graphics.
         /// </summary>
-        public class Fit_graphics
+        public struct Fit_graphics
         {
-            /// <summary>
-            /// Are the fit parametrs actual?
-            /// I.e. should it be drawn?
-            /// </summary>
-            public bool active = false;
+            public Fit_graphics(PointF lL, PointF lR, PointF rL, PointF rR,
+                PointF crossing, int[] lIndexes, int[] rIndexes) : this()
+            {
+                LL = lL;
+                LR = lR;
+                RL = rL;
+                RR = rR;
+                Crossing = crossing;
+                LIndexes = lIndexes ?? throw new ArgumentNullException(nameof(lIndexes));
+                RIndexes = rIndexes ?? throw new ArgumentNullException(nameof(rIndexes));
+            }
 
             /// <summary>
             /// Left line, left end.
             /// </summary>
-            public PointF LL;
+            public PointF LL { get; }
             /// <summary>
             /// Left line, right end.
             /// </summary>
-            public PointF LR;
+            public PointF LR { get; }
             /// <summary>
             /// Right line, left end.
             /// </summary>
-            public PointF RL;
+            public PointF RL { get; }
             /// <summary>
             /// Right line, right end.
             /// </summary>
-            public PointF RR;
+            public PointF RR { get; }
             /// <summary>
             /// Crossing point of left and right line.
             /// </summary>
-            public PointF crossing;
+            public PointF Crossing { get; }
 
             /// <summary>
             /// Left line indexes, where fitting was done.
             /// Start index and length.
             /// </summary>
-            public int[] LIndexes;
+            public int[] LIndexes { get; }
             /// <summary>
             /// Right line indexes, where fitting was done.
             /// Start index and length.
             /// </summary>
-            public int[] RIndexes;
-
+            public int[] RIndexes { get; }
         }
 
         /// <summary>
-        /// Data-structure used in Measurements class.
-        /// Store empirical parameters used in
-        /// Measurement.FindAbsorbtionEdge().
+        /// Store empirical parameters used in Measurement.FindAbsorbtionEdge().
         /// </summary>
-        public class MConstants
+        public struct Parameters
         {
+            public Parameters(int const_skip, double const_eps, int const_smooth1,
+                int const_smooth2, int const_1DHalfW, double const_slider,
+                string absorbtion_edge) : this()
+            {
+                Const_skip = const_skip;
+                Const_eps = const_eps;
+                Const_smooth1 = const_smooth1;
+                Const_smooth2 = const_smooth2;
+                Const_1DHalfW = const_1DHalfW;
+                Const_slider = const_slider;
+                Absorbtion_edge = absorbtion_edge ?? throw new ArgumentNullException(nameof(absorbtion_edge));
+            }
+
             /// <summary>
             /// FindAbsorbtionEdge => skipToLeft.
             /// </summary>
-            public int const_skip;
+            public int Const_skip { get; }
             /// <summary>
             /// Inchworm => rSquared minimising forgiveness.
             /// </summary>
-            public double const_eps;
+            public double Const_eps { get; }
             /// <summary>
             /// FindAbsorbtionEdge => Intensities smooth window width.
             /// </summary>
-            public int const_smooth1;
+            public int Const_smooth1 { get; }
             /// <summary>
             /// FindAbsorbtionEdge => derivatives smooth window width.
             /// </summary>
-            public int const_smooth2;
+            public int Const_smooth2 { get; }
             /// <summary>
             /// FindAbsorbtionEdge => search around last point half-width.
             /// </summary>
-            public int const_1DHalfW;
+            public int Const_1DHalfW { get; }
             /// <summary>
             /// How much the slider is forgiving.
             /// </summary>
-            public double const_slider;
+            public double Const_slider { get; }
             /// <summary>
-            /// Which method to use in search
-            /// for the two lines.
+            /// Which method to use in search for the two lines.
             /// </summary>
-            public string absorbtion_edge;
+            public string Absorbtion_edge { get; }
         }
 
         /// <summary>
@@ -671,14 +669,20 @@ namespace spectrometric_thermometer
         /// </summary>
         public struct Fit_Data
         {
+            public Fit_Data(double[] popt, double rSquared) : this()
+            {
+                Popt = popt ?? throw new ArgumentNullException(nameof(popt));
+                RSquared = rSquared;
+            }
+
             /// <summary>
             /// Array of fitting parameters.
             /// </summary>
-            public double[] popt;
+            public double[] Popt { get; }
             /// <summary>
             /// R squared. Goodness of fit.
             /// </summary>
-            public double rSquared;
+            public double RSquared { get; }
         }
     }
 }
