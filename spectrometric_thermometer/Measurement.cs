@@ -32,7 +32,7 @@ namespace spectrometric_thermometer
         /// <summary>
         /// Event on finished averaging.
         /// </summary>
-        public event EventHandler<EventArgs> AveragingFinished;
+        public event EventHandler<AveragingFinishedEventArgs> AveragingFinished;
 
         /// <summary>
         /// Wavelength property.
@@ -45,6 +45,9 @@ namespace spectrometric_thermometer
         /// Readable only if not null.
         /// </summary>
         public double[] Intensities { get; private set; } = null;
+
+
+        public double LastTemperature { get; private set; } = -1;
 
         /// <summary>
         /// Time property.
@@ -82,7 +85,7 @@ namespace spectrometric_thermometer
                 _spectraLoaded = value;
                 if (SpectraLoaded == SpectraToLoad)
                 {
-                    OnAveragingFinished(this, EventArgs.Empty);
+                    OnAveragingFinished();
                 }
             }
         }
@@ -108,7 +111,7 @@ namespace spectrometric_thermometer
         /// <summary>
         /// Constants used in FindAbsorbtionEdge(). With defaults.
         /// </summary>
-        public Parameters MParameters { get; } = new Parameters
+        public Parameters MParameters { get; set; } = new Parameters
         (
             const_skip: 5,
             const_eps:  1.2,
@@ -179,7 +182,7 @@ namespace spectrometric_thermometer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        protected virtual void OnAveragingFinished(object sender, EventArgs e)
+        protected virtual void OnAveragingFinished()
         {
             SmoothOutPeaks(ref _intensities2Add);
             if (SpectraLoaded > 1)
@@ -193,8 +196,10 @@ namespace spectrometric_thermometer
             Time = new DateTime(_ticks2Add / SpectraLoaded);
 
             SpectraLoaded = 0;  // Reset.
-
-            AveragingFinished?.Invoke(this, EventArgs.Empty);
+            LastTemperature = Analyze();
+            AveragingFinished?.Invoke(this, new AveragingFinishedEventArgs(
+                loadingMultipleSpectra: SpectraToLoad > 1,
+                temperature: LastTemperature));
         }
 
 
@@ -586,44 +591,44 @@ namespace spectrometric_thermometer
             /// <summary>
             /// Left line, left end.
             /// </summary>
-            public PointF LL { get; }
+            public PointF LL { get; set; }
             /// <summary>
             /// Left line, right end.
             /// </summary>
-            public PointF LR { get; }
+            public PointF LR { get; set; }
             /// <summary>
             /// Right line, left end.
             /// </summary>
-            public PointF RL { get; }
+            public PointF RL { get; set; }
             /// <summary>
             /// Right line, right end.
             /// </summary>
-            public PointF RR { get; }
+            public PointF RR { get; set; }
             /// <summary>
             /// Crossing point of left and right line.
             /// </summary>
-            public PointF Crossing { get; }
+            public PointF Crossing { get; set; }
 
             /// <summary>
             /// Left line indexes, where fitting was done.
             /// Start index and length.
             /// </summary>
-            public int[] LIndexes { get; }
+            public int[] LIndexes { get; set; }
             /// <summary>
             /// Right line indexes, where fitting was done.
             /// Start index and length.
             /// </summary>
-            public int[] RIndexes { get; }
+            public int[] RIndexes { get; set; }
         }
 
         /// <summary>
         /// Store empirical parameters used in Measurement.FindAbsorbtionEdge().
         /// </summary>
-        public struct Parameters
+        public class Parameters
         {
             public Parameters(int const_skip, double const_eps, int const_smooth1,
                 int const_smooth2, int const_1DHalfW, double const_slider,
-                string absorbtion_edge) : this()
+                string absorbtion_edge)
             {
                 Const_skip = const_skip;
                 Const_eps = const_eps;
@@ -637,31 +642,31 @@ namespace spectrometric_thermometer
             /// <summary>
             /// FindAbsorbtionEdge => skipToLeft.
             /// </summary>
-            public int Const_skip { get; }
+            public int Const_skip { get; set; }
             /// <summary>
             /// Inchworm => rSquared minimising forgiveness.
             /// </summary>
-            public double Const_eps { get; }
+            public double Const_eps { get; set; }
             /// <summary>
             /// FindAbsorbtionEdge => Intensities smooth window width.
             /// </summary>
-            public int Const_smooth1 { get; }
+            public int Const_smooth1 { get; set; }
             /// <summary>
             /// FindAbsorbtionEdge => derivatives smooth window width.
             /// </summary>
-            public int Const_smooth2 { get; }
+            public int Const_smooth2 { get; set; }
             /// <summary>
             /// FindAbsorbtionEdge => search around last point half-width.
             /// </summary>
-            public int Const_1DHalfW { get; }
+            public int Const_1DHalfW { get; set; }
             /// <summary>
             /// How much the slider is forgiving.
             /// </summary>
-            public double Const_slider { get; }
+            public double Const_slider { get; set; }
             /// <summary>
             /// Which method to use in search for the two lines.
             /// </summary>
-            public string Absorbtion_edge { get; }
+            public string Absorbtion_edge { get; set; }
         }
 
         /// <summary>
@@ -683,6 +688,20 @@ namespace spectrometric_thermometer
             /// R squared. Goodness of fit.
             /// </summary>
             public double RSquared { get; }
+        }
+
+        /// <summary>
+        /// Carry information about finished measurement.
+        /// </summary>
+        public class AveragingFinishedEventArgs : EventArgs
+        {
+            public AveragingFinishedEventArgs(bool loadingMultipleSpectra, double temperature)
+            {
+                LoadingMultipleSpectra = loadingMultipleSpectra;
+                Temperature = temperature;
+            }
+            public bool LoadingMultipleSpectra { get; private set; }
+            public double Temperature { get; private set; }
         }
     }
 }

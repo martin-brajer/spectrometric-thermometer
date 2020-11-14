@@ -6,14 +6,14 @@ namespace spectrometric_thermometer
     public partial class SpectrometricThermometer
     {
         /// <summary>
-        /// Represents general parameters.
+        /// Represents parameters needed for spectra manipulation.
         /// </summary>
-        public struct Parameters
+        public class Parameters
         {
             public Parameters(bool save, bool rewrite, int filenameIndex,
                 int filenameIndexLength, float periodLength, int average,
                 float exposureTime, bool adaptation, float adaptationMaxExposureTime,
-                string filename) : this()
+                string filename)
             {
                 Save = save;
                 Rewrite = rewrite;
@@ -27,16 +27,46 @@ namespace spectrometric_thermometer
                 Filename = filename ?? throw new ArgumentNullException(nameof(filename));
             }
 
-            public bool Save { get; }
-            public bool Rewrite { get; }
-            public int FilenameIndex { get; }
-            public int FilenameIndexLength { get; }
-            public float PeriodLength { get; }
-            public int Average { get; }
-            public float ExposureTime { get; }
-            public bool Adaptation { get; }
-            public float AdaptationMaxExposureTime { get; }
-            public string Filename { get; }
+            public bool Save { get; set; }
+            public bool Rewrite { get; set; }
+            public int FilenameIndex { get; set; }
+            public int FilenameIndexLength { get; set; }
+            public float PeriodLength { get; set; }
+            public int Average { get; set; }
+            public float ExposureTime { get; set; }
+            public bool Adaptation { get; set; }
+            public float AdaptationMaxExposureTime { get; set; }
+            public string Filename { get; set; }
+
+            /// <summary>
+            /// Handle numbering if enabled. Add one to index.
+            /// </summary>
+            /// <returns></returns>
+            public string FilenameIndexText()
+            {
+                string filenameIndexText = "";
+                if(!Rewrite)
+                {
+                    filenameIndexText = FilenameIndex.ToString("D" + FilenameIndexLength);
+                }
+
+                if (IsAllNines(filenameIndexText))
+                {
+                    FilenameIndexLength++;
+                }
+                FilenameIndex++;
+
+                return filenameIndexText;
+            }
+
+            private bool IsAllNines(string input)
+            {
+                foreach (char ch in input)
+                {
+                    if (ch != '9') { return false; }
+                }
+                return true;
+            }
 
             /// <summary>
             /// Parse measurement parameters to be handed over to <see cref="ISpectrometer"/>.
@@ -98,9 +128,13 @@ namespace spectrometric_thermometer
 
                 // "adaptation" cannot be wrong.
 
-                if (!float.TryParse(adaptationMaxExposureTime, out float adaptationMaxExposureTimeFloat))
+                float adaptationMaxExposureTimeFloat = 0f;
+                if (adaptation)
                 {
-                    throw new ArgumentException("Adaptation time error!" + " Converted value: " + adaptationMaxExposureTime + ".");
+                    if (!float.TryParse(adaptationMaxExposureTime, out adaptationMaxExposureTimeFloat))
+                    {
+                        throw new ArgumentException("Adaptation time error!" + " Converted value: " + adaptationMaxExposureTime + ".");
+                    }
                 }
 
                 if (!IsValidFileNameOrPath(filename))
@@ -124,6 +158,9 @@ namespace spectrometric_thermometer
                     filenameIndexLength, periodLengthFloat, averageInt,
                     exposureTimeFloat, adaptation, adaptationMaxExposureTimeFloat, filename);
             }
+
+            public static Parameters Parameters_Default => new Parameters(
+                false, false, 0, 1, 0, 1, 1, false, 1, "");
         }
     }
 }

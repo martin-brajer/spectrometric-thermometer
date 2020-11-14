@@ -47,12 +47,12 @@ namespace spectrometric_thermometer
         /// Model name.
         /// Read from device if available.
         /// </summary>
-        public string ModelName { get; }
+        public abstract string ModelName { get; }
         /// <summary>
         /// Serial number.
         /// Read from device if available.
         /// </summary>
-        public string SerialNo { get; }
+        public abstract string SerialNo { get; }
         /// <summary>
         /// Device exposure time.
         /// </summary>
@@ -85,7 +85,7 @@ namespace spectrometric_thermometer
         /// </summary>
         public int NumberOfDevicesFound { get; protected set; } = 0;
 
-        public Parameters MParameters { get; set; }
+        public Parameters MParameters { get; set; } = Parameters.Parameters_Default;
 
         /// <summary>
         /// Destructor.

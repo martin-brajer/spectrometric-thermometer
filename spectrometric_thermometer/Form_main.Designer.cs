@@ -717,7 +717,7 @@
         private System.Windows.Forms.Panel pnl2;
         internal System.Windows.Forms.Button btnDefaultSize;
         internal System.Windows.Forms.Button btnPlotCalibration;
-        private System.Windows.Forms.ComboBox cBoxCalibration;
+        internal System.Windows.Forms.ComboBox cBoxCalibration;
         internal System.Windows.Forms.Button btnClear;
         internal System.Windows.Forms.Button btnLoadSpectra;
         internal System.Windows.Forms.Button btnSaveTemperatures;

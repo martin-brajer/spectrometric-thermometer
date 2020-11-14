@@ -25,11 +25,11 @@ namespace spectrometric_thermometer
         // Plotting.
         private ScottPlot.Plot plt1;
 
-        private ScottPlot.Plot plt2;
+        public ScottPlot.Plot plt2;
         public Form_main()
         {
             InitializeComponent();
-
+            
             back2Front = new Back2Front(front: this);
             spectrometricThermometer = new SpectrometricThermometer(front: back2Front);
             spectrometricThermometer.Measurement.AveragingFinished += Measurement_AveragingFinished;
@@ -78,7 +78,7 @@ namespace spectrometric_thermometer
             }
         }
 
-        public Parameters MParameters { get; } = Parameters.Constants_EN();
+        public Constants constants = Constants.Constants_EN;
         /// <summary>
         /// Search for spectrometers, choose one, close the communication.
         /// </summary>
@@ -136,7 +136,7 @@ namespace spectrometric_thermometer
                 default:
                     break;
             }
-            btnInitialize.Text = MParameters.BtnInitializeText[(int)initializationState];  // Button text.
+            btnInitialize.Text = constants.btnInitializeText[(int)initializationState];  // Button text.
         }
 
         /// <summary>
@@ -174,7 +174,6 @@ namespace spectrometric_thermometer
                         My_msg(ex.Message);
                         return;
                     }
-
                     if (spectrometricThermometer.BtnStartMeasurement(parameters))
                     {
                         measuringState = MeasuringState.Measuring;
@@ -201,7 +200,7 @@ namespace spectrometric_thermometer
 
             // Disable settings while measuring.
             pnlSettings.Enabled = measuringState == MeasuringState.Idle;
-            btnMeasure.Text = MParameters.BtnMeasureText[(int)measuringState];
+            btnMeasure.Text = constants.btnMeasureText[(int)measuringState];
         }
 
         /// <summary>
@@ -243,7 +242,7 @@ namespace spectrometric_thermometer
         private void BtnDefaultSize_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Normal;
-            this.Size = MParameters.DefaultSize;
+            this.Size = constants.defaultSize;
         }
 
         private void BtnExit_Click(object sender, EventArgs e) => Close();
@@ -255,7 +254,7 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void BtnHelp_Click(object sender, EventArgs e)
         {
-            string helpFileName = MParameters.HelpFileName;
+            string helpFileName = constants.helpFileName;
             if (File.Exists(helpFileName))
             {
                 Process.Start(helpFileName);
@@ -312,7 +311,7 @@ namespace spectrometric_thermometer
                                 "T = {0:0.0} °C",
                                 spectrometricThermometer.AnalyzeMeasurement()));
                     }
-                    PlotData(
+                    Plot(
                         spectrometricThermometer.Measurement,
                         spectrometricThermometer.MTemperatureHistory);
                 }
@@ -390,7 +389,7 @@ namespace spectrometric_thermometer
 
             bool temperatureControlMode_None = spectrometricThermometer.Switch(out double outputVoltage);
             tBoxOutputVoltage.Text = outputVoltage.ToString("F3");
-            btnSwitch.Text = MParameters.BtnSwitchText[temperatureControlMode_None ? 0 : 1];
+            btnSwitch.Text = constants.btnSwitchText[temperatureControlMode_None ? 0 : 1];
         }
 
         /// <summary>
@@ -400,7 +399,8 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void CBoxCalibration_SelectedIndexChanged(object sender, EventArgs e)
         {
-            spectrometricThermometer.SelectCalibration(cBoxCalibration.SelectedIndex);
+            if (spectrometricThermometer != null)
+                spectrometricThermometer.SelectCalibration(cBoxCalibration.SelectedIndex);
         }
 
         /// <summary>
@@ -521,18 +521,18 @@ namespace spectrometric_thermometer
             // Change language from CZ to ENG (decimal point).
             System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-GB");
             // Buttons.text which can change.
-            btnInitialize.Text = MParameters.BtnInitializeText[0];
-            btnMeasure.Text = MParameters.BtnMeasureText[0];
-            btnSwitch.Text = MParameters.BtnSwitchText[0];
+            btnInitialize.Text = constants.btnInitializeText[0];
+            btnMeasure.Text = constants.btnMeasureText[0];
+            btnSwitch.Text = constants.btnSwitchText[0];
             lblInfo.Text = "";
             // Log message box first line.
-            My_msg(MParameters.InitialMessage, newline: false);
+            My_msg(constants.initialMessage, newline: false);
             // ComboBox initialization.
             cBoxDeviceType.DataSource = Spectrometer.Factory.ListNames();
             cBoxDeviceType.SelectedIndex = 0;  // Select the first item (default).
             // Plotting.
-            plt1 = Figs_Initialize(formsPlotLeft, MParameters.Fig1Title, MParameters.Fig1LabelX, MParameters.Fig1LabelY);
-            plt2 = Figs_Initialize(formsPlotRight, MParameters.Fig2Title, MParameters.Fig2LabelX, MParameters.Fig2LabelY);
+            plt1 = Figs_Initialize(formsPlotLeft, constants.fig1Title, constants.fig1LabelX, constants.fig1LabelY);
+            plt2 = Figs_Initialize(formsPlotRight, constants.fig2Title, constants.fig2LabelX, constants.fig2LabelY);
             formsPlotLeft.MouseClicked += FormsPlotLeft_MouseClicked;
 
             // DAC.
@@ -578,13 +578,13 @@ namespace spectrometric_thermometer
         {
             // Horizontal.
             // How much wider than default.
-            int delta = this.Size.Width - MParameters.DefaultSize.Width;
+            int delta = this.Size.Width - constants.defaultSize.Width;
 
-            formsPlotLeft.Width = formsPlotRight.Width = MParameters.FormsPlotSize + (delta / 2);
+            formsPlotLeft.Width = formsPlotRight.Width = constants.formsPlotSize + (delta / 2);
             // pictureBox1.Location is constant.
             // 458 = default pictureBox2.Location.X
             formsPlotRight.Location = new Point(
-                (MParameters.FormsPlotSize + 12) + (delta / 2),  // X
+                (constants.formsPlotSize + 12) + (delta / 2),  // X
                 formsPlotRight.Location.Y);  // Y
 
             // Follows part, which is constant between minimum and default.
@@ -596,12 +596,12 @@ namespace spectrometric_thermometer
             lineShape1.X2 = 903 + delta;  // 903 = lineShape1 default X2.
 
             // Vertical.
-            delta = this.Size.Height - MParameters.DefaultSize.Height;
-            formsPlotLeft.Height = formsPlotRight.Height = MParameters.FormsPlotSize + delta;
+            delta = this.Size.Height - constants.defaultSize.Height;
+            formsPlotLeft.Height = formsPlotRight.Height = constants.formsPlotSize + delta;
 
             if (plt1 != null && plt2 != null)
             {
-                PlotData(null, null);  // Render only.
+                Plot(null, null);  // Render only.
             }
         }
 
@@ -624,7 +624,7 @@ namespace spectrometric_thermometer
                 plt2.Title(string.Format(
                     "T = {0:0.0} °C",
                     spectrometricThermometer.AnalyzeMeasurement(clickedWavelength)));
-                PlotData(
+                Plot(
                     spectrometricThermometer.Measurement,
                     spectrometricThermometer.MTemperatureHistory);
             }
@@ -677,7 +677,7 @@ namespace spectrometric_thermometer
         /// </summary>
         /// <param name="measurement"></param>
         /// <param name="temperatureHistory"></param>
-        private void PlotData(
+        public void Plot(
             IMeasurementPlot measurement,
             SpectrometricThermometer.ITemperatureHistory temperatureHistory)
         {
@@ -689,8 +689,8 @@ namespace spectrometric_thermometer
                 double[] intensities = measurement.Intensities;
                 Measurement.Fit_graphics fitGraphics = measurement.FitGraphics;
 
-                plt1.YLabel(MParameters.Fig1LabelY);
-                plt1.XLabel(MParameters.Fig1Title);
+                plt1.YLabel(constants.fig1LabelY);
+                plt1.XLabel(constants.fig1Title);
                 plt1.AxisAuto(horizontalMargin: .9, verticalMargin: .5);
                 plt1.Axis(null, null, 0, null);
                 plt1.Clear();
@@ -771,11 +771,12 @@ namespace spectrometric_thermometer
             formsPlotRight.Render();
         }
 
-        private void Measurement_AveragingFinished(object sender, EventArgs e)
+        private void Measurement_AveragingFinished(object sender, Measurement.AveragingFinishedEventArgs e)
         {
-            if (spectrometricThermometer.Measurement.SpectraToLoad > 1)  // Push to EventArgs.
+            if (e.LoadingMultipleSpectra)
+            {
                 LabelBold(lblAverage, true);
-
+            }
         }
 
         private void Spectrometer_ExposureFinished(object sender, Spectrometer.ExposureFinishedEventArgs e)
@@ -806,72 +807,60 @@ namespace spectrometric_thermometer
         /// <summary>
         /// GUI constants like labels or default size.
         /// </summary>
-        public struct Parameters
+        public struct Constants
         {
-            public Parameters(string initialMessage, string helpFileName, Size defaultSize,
-                int formsPlotSize, string fig1Title, string fig1LabelX, string fig1LabelY,
-                string fig2Title, string fig2LabelX, string fig2LabelY, string[] btnInitializeText,
-                string[] btnMeasureText, string[] btnSwitchText)
-            {
-                InitialMessage = initialMessage ?? throw new ArgumentNullException(nameof(initialMessage));
-                HelpFileName = helpFileName ?? throw new ArgumentNullException(nameof(helpFileName));
-                DefaultSize = defaultSize;
-                FormsPlotSize = formsPlotSize;
-                Fig1Title = fig1Title ?? throw new ArgumentNullException(nameof(fig1Title));
-                Fig1LabelX = fig1LabelX ?? throw new ArgumentNullException(nameof(fig1LabelX));
-                Fig1LabelY = fig1LabelY ?? throw new ArgumentNullException(nameof(fig1LabelY));
-                Fig2Title = fig2Title ?? throw new ArgumentNullException(nameof(fig2Title));
-                Fig2LabelX = fig2LabelX ?? throw new ArgumentNullException(nameof(fig2LabelX));
-                Fig2LabelY = fig2LabelY ?? throw new ArgumentNullException(nameof(fig2LabelY));
-                BtnInitializeText = btnInitializeText ?? throw new ArgumentNullException(nameof(btnInitializeText));
-                BtnMeasureText = btnMeasureText ?? throw new ArgumentNullException(nameof(btnMeasureText));
-                BtnSwitchText = btnSwitchText ?? throw new ArgumentNullException(nameof(btnSwitchText));
-            }
-
             // Buttons text.
-            public string[] BtnInitializeText { get; }
-
-            public string[] BtnMeasureText { get; }
-
-            public string[] BtnSwitchText { get; }
-
+            public readonly string[] btnInitializeText;
+            public readonly string[] btnMeasureText;
+            public readonly string[] btnSwitchText;
             /// <summary>
-            /// Default size of the <see cref="Form_main"/>.
+            /// Default size of the <see cref="Form_main"/> window.
             /// </summary>
-            public Size DefaultSize { get; }
-
-            public string Fig1LabelX { get; }
-
-            public string Fig1LabelY { get; }
-
+            public readonly Size defaultSize;
+            public readonly string fig1LabelX;
+            public readonly string fig1LabelY;
             // Plotting - Figure 1.
-            public string Fig1Title { get; }
-
-            public string Fig2LabelX { get; }
-
-            public string Fig2LabelY { get; }
-
+            public readonly string fig1Title;
+            public readonly string fig2LabelX;
+            public readonly string fig2LabelY;
             // Plotting - Figure 2.
-            public string Fig2Title { get; }
-
-            public int FormsPlotSize { get; }
-
-            public string HelpFileName { get; }
-
+            public readonly string fig2Title;
+            public readonly int formsPlotSize;
+            public readonly string helpFileName;
             /// <summary>
             /// First line printed by <see cref="My_msg(string)"/> at program start.
             /// </summary>
-            public string InitialMessage { get; }
+            public readonly string initialMessage;
 
-            public static Parameters Constants_EN() => new Parameters(
-                                                                                                                                                                            initialMessage: "Spectrometric Thermometer (version 3.5)",
+            public Constants(string[] btnInitializeText, string[] btnMeasureText,
+                string[] btnSwitchText, Size defaultSize, string fig1LabelX, string fig1LabelY,
+                string fig1Title, string fig2LabelX, string fig2LabelY, string fig2Title,
+                int formsPlotSize, string helpFileName, string initialMessage)
+            {
+                this.btnInitializeText = btnInitializeText ?? throw new ArgumentNullException(nameof(btnInitializeText));
+                this.btnMeasureText = btnMeasureText ?? throw new ArgumentNullException(nameof(btnMeasureText));
+                this.btnSwitchText = btnSwitchText ?? throw new ArgumentNullException(nameof(btnSwitchText));
+                this.defaultSize = defaultSize;
+                this.fig1LabelX = fig1LabelX ?? throw new ArgumentNullException(nameof(fig1LabelX));
+                this.fig1LabelY = fig1LabelY ?? throw new ArgumentNullException(nameof(fig1LabelY));
+                this.fig1Title = fig1Title ?? throw new ArgumentNullException(nameof(fig1Title));
+                this.fig2LabelX = fig2LabelX ?? throw new ArgumentNullException(nameof(fig2LabelX));
+                this.fig2LabelY = fig2LabelY ?? throw new ArgumentNullException(nameof(fig2LabelY));
+                this.fig2Title = fig2Title ?? throw new ArgumentNullException(nameof(fig2Title));
+                this.formsPlotSize = formsPlotSize;
+                this.helpFileName = helpFileName ?? throw new ArgumentNullException(nameof(helpFileName));
+                this.initialMessage = initialMessage ?? throw new ArgumentNullException(nameof(initialMessage));
+            }
+
+            public static Constants Constants_EN => new Constants(
+                initialMessage: "Spectrometric Thermometer (version 3.5)",
                 helpFileName: "Help.pdf",
                 defaultSize: new Size(width: 929, height: 743),
                 formsPlotSize: 446,
                 fig1Title: "Spectrum",
                 fig1LabelX: "Wavelength (nm)",
                 fig1LabelY: "Intensity(a.u.)",
-                fig2Title: "T = ? °C",
+                fig2Title: "T: ? °C",
                 fig2LabelX: "Time (sec)",
                 fig2LabelY: "Temperature (°C)",
                 btnInitializeText: new string[] { "&Initialize", "Choose dev&ice", "Disc&onnect" },

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Linq;
 using System.Drawing;
+using System.IO;
 
 namespace spectrometric_thermometer
 {
@@ -21,10 +22,9 @@ namespace spectrometric_thermometer
         private readonly Back2Front Front = null;
 
         /// <summary>
-        /// File path + filename without optional numbers and extension.
+        /// Temperature control mode.
+        /// Used while switching temperature control device (this program or Eurotherm).
         /// </summary>
-        private string fileNamePart;
-
         private TemperatureControlMode temperatureControlMode = TemperatureControlMode.None;
 
         /// <summary>
@@ -39,6 +39,8 @@ namespace spectrometric_thermometer
 
         public SpectrometricThermometer(Back2Front front)
         {
+            Front = front ?? throw new ArgumentNullException(nameof(front));
+            
             // Events.
             Measurement.AveragingFinished += Measurement_AveragingFinished;
 
@@ -53,8 +55,6 @@ namespace spectrometric_thermometer
 
             timerSwitch.Tick += new EventHandler(TimerSwitch_Tick);
             timerSwitch.Interval = 1000;  // 1 sec.
-
-            Front = front ?? throw new ArgumentNullException(nameof(front));
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace spectrometric_thermometer
         /// Single measurement data.
         /// </summary>
         public Measurement Measurement { get; set; } = new Measurement();
-        public Parameters MParameters { get; set; }
+        private Parameters mParameters = Parameters.Parameters_Default;
 
         public TemperatureHistory MTemperatureHistory { get; set; } = new TemperatureHistory();
 
@@ -125,12 +125,7 @@ namespace spectrometric_thermometer
         /// If no spectrometer chosen => null.
         /// </summary>
         public Spectrometer Spectrometer { get; set; } = null;
-        /// <summary>
-        /// Temperature control mode.
-        /// Used while switching temperature control device (this program or Eurotherm).
-        /// </summary>
-        private TemperatureControlMode MTemperatureControlMode { get; set; }
-
+        
         /// <summary>
         /// Validity of path.
         /// </summary>
@@ -145,7 +140,7 @@ namespace spectrometric_thermometer
             }
 
             // Determines if there are bad characters in the name.
-            foreach (char badChar in System.IO.Path.GetInvalidPathChars())
+            foreach (char badChar in Path.GetInvalidPathChars())
             {
                 if (name.IndexOf(badChar) > -1)
                 {
@@ -164,15 +159,7 @@ namespace spectrometric_thermometer
         /// </summary>
         public double AnalyzeMeasurement()
         {
-            double temperature;
-            //try
-            {
-                temperature = Measurement.Analyze();
-            }
-            //catch (InvalidOperationException)
-            //{
-            //    return;
-            //}
+            double temperature = Measurement.LastTemperature;
             MTemperatureHistory.Add(temperature, Measurement.Time);
             return temperature;
         }
@@ -200,6 +187,8 @@ namespace spectrometric_thermometer
             }
             Measurement.IndexMax1D = clickedIndex;
             MTemperatureHistory.RemoveLast();
+
+            // RETRIGGER ANALYSE MEASUREMENT
 
             return AnalyzeMeasurement();
         }
@@ -268,7 +257,7 @@ namespace spectrometric_thermometer
         public bool BtnSaveTemperatures()
         {
             WriteColumns(
-                  System.IO.Path.GetDirectoryName(fileNamePart) + "/TemperatureHistory.txt",
+                  Path.GetDirectoryName(mParameters.Filename) + "/TemperatureHistory.txt",
                   MTemperatureHistory.Times,
                   MTemperatureHistory.Temperatures);
             return true;
@@ -309,8 +298,9 @@ namespace spectrometric_thermometer
         /// <returns></returns>
         public bool BtnStartMeasurement(Parameters stParameters)
         {
-            MParameters = stParameters;
+            mParameters = stParameters;
             Spectrometer.UseAdaptation = stParameters.Adaptation;
+            Measurement.SpectraToLoad = stParameters.Average;
 
             try
             {
@@ -327,9 +317,6 @@ namespace spectrometric_thermometer
                 Front.My_msg(ex.Message);
                 return false;
             }
-
-            Measurement.SpectraToLoad = stParameters.Average;
-            fileNamePart = stParameters.Filename;
 
             if (!MTemperatureHistory.Any())  // Is empty?
             {
@@ -371,14 +358,14 @@ namespace spectrometric_thermometer
         {
             Regex regex = new Regex("    ");
             //Regex regex = new Regex(delimiter);
-            string[] lines = System.IO.File.ReadAllLines("Config.cfg");
+            string[] lines = File.ReadAllLines("Config.cfg");
 
             Calibrations.Clear();
             List<string> calibComboBox = new List<string>();
 
-            for (int i = 0; i < lines.Length; i++)
+            foreach (string line in lines)
             {
-                string[] items = regex.Split(lines[i]);
+                string[] items = regex.Split(line);
                 switch (items[0])
                 {
                     case "calib_points":
@@ -496,17 +483,17 @@ namespace spectrometric_thermometer
                         }
                     case "PID_P":
                         {
-                            tBoxP.Text = items[1];
+                            Front.Pid_P = items[1];
                             break;
                         }
                     case "PID_I":
                         {
-                            tBoxI.Text = items[1];
+                            Front.Pid_I = items[1];
                             break;
                         }
                     case "PID_D":
                         {
-                            tBoxD.Text = items[1];
+                            Front.Pid_D = items[1];
                             break;
                         }
 
@@ -548,13 +535,13 @@ namespace spectrometric_thermometer
             if (Calibrations.Count == 0)
             {
                 Front.My_msg("No calibration found!");
-                btnCalib.Enabled = false;
+                Front.BtnCalibrationEnabled = false;
                 return;
             }
-            btnCalib.Enabled = true;
+            Front.BtnCalibrationEnabled = true;
             // ComboBox.
-            cBoxCalib.DataSource = calibComboBox;
-            cBoxCalib.SelectedIndex = 0;
+            Front.CBoxCalibrationDataSource = calibComboBox;
+            SelectCalibration(0);
         }
 
         /// <summary>
@@ -568,7 +555,7 @@ namespace spectrometric_thermometer
             if (delimiter == null)
                 delimiter = this.delimiter;
 
-            string[] lines = System.IO.File.ReadAllLines(filename);
+            string[] lines = File.ReadAllLines(filename);
             // SpectraSuite Data File recognize.
             if (lines.Length > 0 && lines[0] == "SpectraSuite Data File")
             {
@@ -652,7 +639,7 @@ namespace spectrometric_thermometer
         public bool Switch(out double outputVoltage)
         {
             outputVoltage = double.NaN;
-            if (MTemperatureControlMode == TemperatureControlMode.None)
+            if (temperatureControlMode == TemperatureControlMode.None)
             {
                 if (!double.IsNaN(outputVoltage))
                 {
@@ -678,11 +665,11 @@ namespace spectrometric_thermometer
                         LED(LEDcolour.Red);
                     }
                     timerSwitch.Start();
-                    MTemperatureControlMode = TemperatureControlMode.ET2PC_switch;
+                    temperatureControlMode = TemperatureControlMode.ET2PC_switch;
                 }
                 else
                 {
-                    MTemperatureControlMode = TemperatureControlMode.PC2ET_equal;
+                    temperatureControlMode = TemperatureControlMode.PC2ET_equal;
                 }
             }
             // Sth is already happening => abort.
@@ -690,9 +677,9 @@ namespace spectrometric_thermometer
             {
                 timerSwitch.Stop();
                 LED(LEDcolour.Off);
-                MTemperatureControlMode = TemperatureControlMode.None;
+                temperatureControlMode = TemperatureControlMode.None;
             }
-            return MTemperatureControlMode == TemperatureControlMode.None;
+            return temperatureControlMode == TemperatureControlMode.None;
         }
 
         /// <summary>
@@ -713,7 +700,7 @@ namespace spectrometric_thermometer
             }
 
             // Actually write wavelenghts and intensities to a "*.dat" file.
-            System.IO.File.WriteAllLines(filename, mWrite);
+            File.WriteAllLines(filename, mWrite);
         }
 
         /// <summary>
@@ -731,7 +718,7 @@ namespace spectrometric_thermometer
             }
             else
             {
-                throw new System.IO.FileLoadException("Exception raised while parsing the file.");
+                throw new FileLoadException("Exception raised while parsing the file.");
             }
         }
 
@@ -806,25 +793,19 @@ namespace spectrometric_thermometer
         private void Measurement_AveragingFinished(object sender, EventArgs e)
         {
             // Save to file.
-            if (MParameters.Save)
+            if (mParameters.Save)
             {
-                // Handle numbering if enabled.
-                string fileNameIntText = "";
-                if (!MParameters.Rewrite)
-                {
-                    fileNameIntText = fileNameNumber.ToString("D" + MParameters.FilenameIndexLength);
-                    Front.FilenameIndex = fileNameIntText;
-                    fileNameNumber++;
-                }
-
+                string fileNameIndexText = mParameters.FilenameIndexText();
+                Front.FilenameIndex = fileNameIndexText;
                 WriteColumns(
-                    filename: fileNamePart + fileNameIntText + ".dat",
+                    filename: mParameters.Filename + fileNameIndexText + ".dat",
                     col1: Measurement.Wavelengths,
                     col2: Measurement.Intensities);
             }
 
-            plt2.Title(AnalyzeMeasurement());
-            PlotData();
+            double temperature = AnalyzeMeasurement();
+            Front.Plot(Measurement, MTemperatureHistory, title: temperature.ToString());
+            
         }
 
         /// <summary>
@@ -885,7 +866,7 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void TimerSwitch_Tick(object sender, EventArgs e)
         {
-            switch (MTemperatureControlMode)
+            switch (temperatureControlMode)
             {
                 case TemperatureControlMode.None:
                     throw new ApplicationException("Wrong mode.");
@@ -894,7 +875,7 @@ namespace spectrometric_thermometer
                     if (!ADC.Switched2Eurotherm())
                     {
                         timerSwitch.Stop();
-                        MTemperatureControlMode = TemperatureControlMode.None;
+                        temperatureControlMode = TemperatureControlMode.None;
                         Front.SwitchButtonTextIndex = 0;
                         LED(LEDcolour.Off);
                     }
@@ -905,7 +886,7 @@ namespace spectrometric_thermometer
                     if (ADC.Switched2Eurotherm())
                     {
                         timerSwitch.Stop();
-                        MTemperatureControlMode = TemperatureControlMode.None;
+                        temperatureControlMode = TemperatureControlMode.None;
                         Front.SwitchButtonTextIndex = 0;
                         LED(LEDcolour.Off);
                         break;
@@ -914,7 +895,7 @@ namespace spectrometric_thermometer
                     Front.My_msg("XX AR" + ADC.ReadEurothermV() + "  AL" + DAC.LastWrittenValue);
                     if (Math.Abs(ADC.ReadEurothermV() - DAC.LastWrittenValue) < 0.05)
                     {
-                        MTemperatureControlMode = TemperatureControlMode.PC2ET_switch;
+                        temperatureControlMode = TemperatureControlMode.PC2ET_switch;
                         Front.My_msg("You can switch to Eurotherm.");
                         LED(LEDcolour.Green);
                     }
@@ -924,13 +905,13 @@ namespace spectrometric_thermometer
                     // If difference is greater again than error.
                     if (Math.Abs(ADC.ReadEurothermV() - DAC.LastWrittenValue) >= 0.05)
                     {
-                        MTemperatureControlMode = TemperatureControlMode.PC2ET_equal;
+                        temperatureControlMode = TemperatureControlMode.PC2ET_equal;
                         LED(LEDcolour.Red);
                     }
                     if (ADC.Switched2Eurotherm())
                     {
                         timerSwitch.Stop();
-                        MTemperatureControlMode = TemperatureControlMode.None;
+                        temperatureControlMode = TemperatureControlMode.None;
                         Front.SwitchButtonTextIndex = 0;
                         LED(LEDcolour.Off);
                     }

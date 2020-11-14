@@ -8,9 +8,10 @@ namespace spectrometric_thermometer
         /// <summary>
         /// Represents spectrometer parameters needed to measure a spectrum.
         /// </summary>
-        public struct Parameters
+        public class Parameters
         {
-            public Parameters(float periodLength, float exposureTime, bool adaptation, float adaptationET) : this()
+            public Parameters(float periodLength, float exposureTime, bool adaptation,
+                float adaptationET)
             {
                 PeriodLength = periodLength;
                 ExposureTime = exposureTime;
@@ -18,12 +19,13 @@ namespace spectrometric_thermometer
                 AdaptationET = adaptationET;
             }
 
-            float PeriodLength { get; }
-            float ExposureTime { get; }
-            bool Adaptation { get; }
-            float AdaptationET { get; }
+            float PeriodLength { get; set; }
+            float ExposureTime { get; set; }
+            bool Adaptation { get; set; }
+            float AdaptationET { get; set; }
 
-            public static Parameters Parse(float periodLength, float exposureTime, bool adaptation, float adaptationET, ref ISpectrometerParse spectrometer)
+            public static Parameters Parse(float periodLength, float exposureTime,
+                bool adaptation, float adaptationET, ref ISpectrometerParse spectrometer)
             {
                 // Spectrometer bounds.
                 if (exposureTime < spectrometer.MinExposureTime)
@@ -45,12 +47,11 @@ namespace spectrometric_thermometer
                     }
                 }
 
-                return new Parameters(
-                    periodLength: periodLength,
-                    exposureTime: exposureTime,
-                    adaptation: adaptation,
-                    adaptationET: adaptationET);
+                return new Parameters(periodLength: periodLength, exposureTime: exposureTime,
+                    adaptation: adaptation, adaptationET: adaptationET);
             }
+
+            public static Parameters Parameters_Default => new Parameters(0f, 0f, false, 0f);
         }
     }
 }
