@@ -4,6 +4,13 @@ using System.Linq;
 
 namespace spectrometric_thermometer
 {
+    public interface ISpectrometerParse
+    {
+        bool UseAdaptation { get; }
+        float MaxExposureTime { get; }
+        float MinExposureTime { get; }
+    }
+
     /// <summary>
     /// Representss the base class for the classes
     /// that mediate specific spectrometer devices
@@ -11,13 +18,11 @@ namespace spectrometric_thermometer
     /// <para>The class uses seconds as time unit.</para>
     /// <para>Instantiate subclasses via <see cref="Factory"/>.</para>
     /// </summary>
-    public abstract partial class Spectrometer : IDisposable
+    public abstract partial class Spectrometer : ISpectrometerParse, IDisposable
     {
         // Saturation intensity used in ExposureTimeAdaptation.
         protected float saturationLevel = 0f;
-
-        // Constants.
-        // How often is checked, if exposure is finished, if no such a event is available.
+        // How often is checked, if exposure is finished, if no such an event is available.
         protected readonly float timeReserve = 0.1f;  // Seconds.
 
         /// <summary>
@@ -29,50 +34,38 @@ namespace spectrometric_thermometer
         /// Data properties. Wavelenghts array.
         /// </summary>
         public double[] Wavelengths { get; protected set; }
-
         /// <summary>
         /// Data properties. Intensities array.
         /// </summary>
         public float[] Intensities { get; protected set; }
-
         /// <summary>
         /// Time properties. Time of the last measurement.
         /// Preciselly of the ExposureEvent invoke.
         /// </summary>
         public DateTime Time { get; protected set; }
-
         /// <summary>
         /// Model name.
         /// Read from device if available.
         /// </summary>
         public abstract string ModelName { get; }
-
         /// <summary>
         /// Serial number.
         /// Read from device if available.
         /// </summary>
-        public abstract string SerialNo
-        {
-            get;
-        }
-
+        public abstract string SerialNo { get; }
         /// <summary>
         /// Device exposure time.
-        /// Set by ParameterCheck() method.
         /// </summary>
         public abstract float ExposureTime { get; protected set; }
-
         /// <summary>
         /// Used in local automatic exposure time correction.
         /// Derived from exposure time input.
         /// </summary>
         public float MaxExposureTimeUser { get; protected set; } = float.PositiveInfinity;
-
         /// <summary>
         /// Device maximal exposure time.
         /// </summary>
         public abstract float MaxExposureTime { get; }
-
         /// <summary>
         /// Device minimal exposure time.
         /// </summary>
@@ -82,24 +75,17 @@ namespace spectrometric_thermometer
         /// Duration of the whole cycle: exposure + wait.
         /// </summary>
         public float Period { get; protected set; }
-
         /// <summary>
         /// If true, run <see cref="ExposureTimeAdaptation"/>
         /// in <see cref="OnExposureFinished"/> method.
         /// </summary>
         public bool UseAdaptation { get; set; } = false;
-
         /// <summary>
         /// Number of devices found by SearchDevices() method.
         /// </summary>
         public int NumberOfDevicesFound { get; protected set; } = 0;
 
-        /// <summary>
-        /// Creator.
-        /// </summary>
-        public Spectrometer()
-        {
-        }
+        public Parameters MParameters { get; set; } = Parameters.Parameters_Default;
 
         /// <summary>
         /// Destructor.
@@ -127,7 +113,8 @@ namespace spectrometric_thermometer
             {
                 adapted = ExposureTimeAdaptation();
             }
-            ExposureFinished?.Invoke(this, new ExposureFinishedEventArgs(adapted));
+            ExposureFinished?.Invoke(
+                this, new ExposureFinishedEventArgs(adapted, ExposureTime));
         }
 
         /// <summary>
@@ -135,13 +122,11 @@ namespace spectrometric_thermometer
         /// Fill numberOfDevicesFound.
         /// </summary>
         public abstract void SearchDevices();
-
         /// <summary>
         /// Erace list of devices found by SearchDevices().
         /// Use before open, when the list is not needed anymore.
         /// </summary>
         public abstract void EraceDeviceList();
-
         /// <summary>
         /// Select one of the found spectrometers.
         /// Overload with int parameter.
@@ -149,122 +134,56 @@ namespace spectrometric_thermometer
         /// <exception cref="IndexOutOfRangeException">Param index greater than number of devices found.</exception>
         /// <param name="index">Index of the array.</param>
         public abstract void SelectDevice(int index);
-
         /// <summary>
         /// Deselect the selected spectrometer.
         /// Overload with no parameter.
         /// </summary>
         public abstract void SelectDevice();
-
         /// <summary>
         /// Return true, if a device is selected.
         /// </summary>
         /// <returns></returns>
         public abstract bool IsSelected();
-
         /// <summary>
         /// Open and init.
         /// </summary>
         public abstract void Open();
-
         /// <summary>
         /// Is the device open?
         /// </summary>
         /// <returns>Is it?</returns>
         public abstract bool IsOpen();
-
         /// <summary>
         /// Close the device.
         /// </summary>
         public abstract void Close();
-
-        /// <summary>
-        /// GUI parameters parsing.
-        /// </summary>
-        /// <exception cref="ArgumentException">Some parameters are wrong.</exception>
-        /// <param name="tBoxPeriod">Period.</param>
-        /// <param name="tBoxExpTime">Exposure time.</param>
-        /// <param name="chBoxRewrite">Rewrite?</param>
-        /// <param name="chBoxAdaptation">Expoure time adaptation?</param>
-        /// <param name="tBoxAdaptation">While allowed, input max exposure time.</param>
-        public void ParameterCheck(
-            string tBoxPeriod,
-            string tBoxExpTime,
-            bool chBoxAdaptation,
-            string tBoxAdaptation)
-        {
-            // Exposure time
-            ExposureTime = ParameterCheck_ExposureLikeTime(tBoxExpTime);
-
-            // Period.
-            // Must be below exposure time.
-            if (tBoxPeriod.Contains(","))  // CZ decimal point character.
-            {
-                throw new ArgumentException("Period contains ','.");
-            }
-            if (float.TryParse(tBoxPeriod, out float period))
-            {
-                if (period < ExposureTime)
-                {
-                    throw new ArgumentException("Period must be longer or equal than exposure time.");
-                }
-            }
-            else
-            {
-                throw new ArgumentException("Period error!" + " Converted value: " + period + ".");
-            }
-            Period = period;
-
-            // Exposure time adaptation.
-            UseAdaptation = chBoxAdaptation;
-            if (UseAdaptation)
-            {
-                float maxExposureTimeUser = ParameterCheck_ExposureLikeTime(tBoxAdaptation);
-                if (maxExposureTimeUser < ExposureTime)
-                {
-                    throw new ArgumentException("Max ET Error!" + " Higher than exposure time.");
-                }
-                MaxExposureTimeUser = maxExposureTimeUser;
-            }
-        }
-
-        /// <summary>
-        /// Try parse exposure time.
-        /// </summary>
-        /// <exception cref="ArgumentException">Wrong exposure time format.</exception>
-        /// <param name="text">String input.</param>
-        /// <returns>Parsed input.</returns>
-        private float ParameterCheck_ExposureLikeTime(string text)
-        {
-            // Exposure time
-            if (text.Contains(","))  // CZ decimal point character.
-            {
-                throw new ArgumentException("Exposure time contains ','.");
-            }
-            if (float.TryParse(text, out float exposureTime))
-            {
-                // Spectrometer bounds.
-                if (exposureTime < MinExposureTime)
-                    throw new ArgumentException("Minimal exposure time is " + MinExposureTime.ToString());
-                if (exposureTime > MaxExposureTime)
-                    throw new ArgumentException("Maximal exposure time is " + MaxExposureTime.ToString());
-            }
-            else
-            {
-                throw new ArgumentException("Exposure time error!" + " Converted value: " + exposureTime + ".");
-            }
-            return exposureTime;
-        }
-
         /// <summary>
         /// Start exposure.
         /// </summary>
         public abstract void StartExposure();
-
         /// <summary>
         /// Cancel exposure.
         /// </summary>
         public abstract void CancelExposure();
+        /// <summary>
+        /// Is spectrometer unplugged?
+        /// </summary>
+        /// <returns>Removed?</returns>
+        public abstract bool CheckDeviceRemoved();
+        /// <summary>
+        /// Device status string.
+        /// </summary>
+        /// <returns>tatus.</returns>
+        public abstract string Status();
+        /// <summary>
+        /// Check if the device is taking spectrum.
+        /// </summary>
+        /// <returns>Is it?</returns>
+        public abstract bool StatusIsTakingSpectrum();
+        /// <summary>
+        /// Get spectrum and save it to intensities array.
+        /// </summary>
+        public abstract void SaveSpectrum();
 
         /// <summary>
         /// Automatic exposure time adaptation.
@@ -274,7 +193,7 @@ namespace spectrometric_thermometer
         /// Initial exposure time shall never be exceeded.
         /// </summary>
         /// <returns>Was exposure time altered?</returns>
-        public bool ExposureTimeAdaptation()
+        private bool ExposureTimeAdaptation()
         {
             float exposureTime = ExposureTime;
             float maxInt = Intensities.Max();
@@ -316,29 +235,6 @@ namespace spectrometric_thermometer
             ExposureTime = exposureTime;  // Finally write to device.
             return true;  // Exposure time has been changed.
         }
-
-        /// <summary>
-        /// Is spectrometer unplugged?
-        /// </summary>
-        /// <returns>Removed?</returns>
-        public abstract bool CheckDeviceRemoved();
-
-        /// <summary>
-        /// Device status string.
-        /// </summary>
-        /// <returns>tatus.</returns>
-        public abstract string Status();
-
-        /// <summary>
-        /// Check if the device is taking spectrum.
-        /// </summary>
-        /// <returns>Is it?</returns>
-        public abstract bool StatusIsTakingSpectrum();
-
-        /// <summary>
-        /// Get spectrum and save it to intensities array.
-        /// </summary>
-        public abstract void SaveSpectrum();
 
         /// <summary>
         /// Disconnect the device.
@@ -440,7 +336,7 @@ namespace spectrometric_thermometer
                         return new Offline();
 
                     default:
-                        throw new ArgumentException("Wrong 'device' parameter in creator.");
+                        throw new ArgumentException("Invalid 'device' parameter in creator.");
                 }
             }
 
@@ -509,25 +405,24 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
-        /// Carry information (bool) about exposure time adaptation.
-        /// True means adaptation was needed this turn.
+        /// Carry information about exposure time adaptation.
         /// </summary>
         public class ExposureFinishedEventArgs : EventArgs
         {
-            /// <summary>
-            /// Creator.
-            /// </summary>
-            /// <param name="adapted">Was the exposure
-            /// time adapted this turn?</param>
-            public ExposureFinishedEventArgs(bool adapted)
+            public ExposureFinishedEventArgs(bool adapted, double exposureTime)
             {
                 Adapted = adapted;
+                ExposureTime = exposureTime;
             }
 
             /// <summary>
             /// Was the exposure time adapted this turn?
             /// </summary>
             public bool Adapted { get; private set; }
+            /// <summary>
+            /// New exposure time.
+            /// </summary>
+            public double ExposureTime { get; private set; }
         }
     }
 }

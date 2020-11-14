@@ -155,7 +155,7 @@ namespace spectrometric_thermometer
                 OnExposureFinished(this, EventArgs.Empty);
             }
 
-            protected sealed override void Dispose(bool disposing)
+            protected sealed override void Dispose(bool disposing)  /// NOT OVERRIDE BUT ADD
             {
                 timer.Dispose();
             }
