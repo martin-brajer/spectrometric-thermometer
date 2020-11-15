@@ -309,7 +309,6 @@ namespace spectrometric_thermometer
                     periodLength: stParameters.PeriodLength,
                     exposureTime: stParameters.ExposureTime,
                     adaptation: stParameters.Adaptation,
-                    adaptationET: stParameters.AdaptationMaxExposureTime,
                     spectrometer: ref spectrometer);
             }
             catch (ArgumentException ex)

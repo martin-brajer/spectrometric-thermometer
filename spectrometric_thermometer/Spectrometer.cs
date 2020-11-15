@@ -40,7 +40,7 @@ namespace spectrometric_thermometer
         public float[] Intensities { get; protected set; }
         /// <summary>
         /// Time properties. Time of the last measurement.
-        /// Preciselly of the ExposureEvent invoke.
+        /// Preciselly of the <see cref="ExposureFinished"/> event invoke.
         /// </summary>
         public DateTime Time { get; protected set; }
         /// <summary>
@@ -57,11 +57,6 @@ namespace spectrometric_thermometer
         /// Device exposure time.
         /// </summary>
         public abstract float ExposureTime { get; protected set; }
-        /// <summary>
-        /// Used in local automatic exposure time correction.
-        /// Derived from exposure time input.
-        /// </summary>
-        public float MaxExposureTimeUser { get; protected set; } = float.PositiveInfinity;
         /// <summary>
         /// Device maximal exposure time.
         /// </summary>
@@ -228,8 +223,7 @@ namespace spectrometric_thermometer
             }
 
             // Bounds.
-            exposureTime = Math.Min(exposureTime,
-                Math.Min(MaxExposureTimeUser, MaxExposureTime));  // User and spectrometer defined max.
+            exposureTime = Math.Min(exposureTime, MaxExposureTime);
             exposureTime = Math.Max(exposureTime, MinExposureTime);  // Default min.
 
             ExposureTime = exposureTime;  // Finally write to device.

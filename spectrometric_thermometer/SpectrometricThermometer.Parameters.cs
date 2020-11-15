@@ -12,8 +12,7 @@ namespace spectrometric_thermometer
         {
             public Parameters(bool save, bool rewrite, int filenameIndex,
                 int filenameIndexLength, float periodLength, int average,
-                float exposureTime, bool adaptation, float adaptationMaxExposureTime,
-                string filename)
+                float exposureTime, bool adaptation, string filename)
             {
                 Save = save;
                 Rewrite = rewrite;
@@ -23,7 +22,6 @@ namespace spectrometric_thermometer
                 Average = average;
                 ExposureTime = exposureTime;
                 Adaptation = adaptation;
-                AdaptationMaxExposureTime = adaptationMaxExposureTime;
                 Filename = filename ?? throw new ArgumentNullException(nameof(filename));
             }
 
@@ -35,7 +33,6 @@ namespace spectrometric_thermometer
             public int Average { get; set; }
             public float ExposureTime { get; set; }
             public bool Adaptation { get; set; }
-            public float AdaptationMaxExposureTime { get; set; }
             public string Filename { get; set; }
 
             /// <summary>
@@ -91,7 +88,6 @@ namespace spectrometric_thermometer
                 string average,
                 string exposureTime,
                 bool adaptation,
-                string adaptationMaxExposureTime,
                 string filename)
             {
                 // "save" cannot be wrong.
@@ -128,15 +124,6 @@ namespace spectrometric_thermometer
 
                 // "adaptation" cannot be wrong.
 
-                float adaptationMaxExposureTimeFloat = 0f;
-                if (adaptation)
-                {
-                    if (!float.TryParse(adaptationMaxExposureTime, out adaptationMaxExposureTimeFloat))
-                    {
-                        throw new ArgumentException("Adaptation time error!" + " Converted value: " + adaptationMaxExposureTime + ".");
-                    }
-                }
-
                 if (!IsValidFileNameOrPath(filename))
                 {
                     throw new ArgumentException("Path error!");
@@ -156,11 +143,11 @@ namespace spectrometric_thermometer
 
                 return new Parameters(save, rewrite, filenameIndexInt,
                     filenameIndexLength, periodLengthFloat, averageInt,
-                    exposureTimeFloat, adaptation, adaptationMaxExposureTimeFloat, filename);
+                    exposureTimeFloat, adaptation, filename);
             }
 
             public static Parameters Parameters_Default => new Parameters(
-                false, false, 0, 1, 0, 1, 1, false, 1, "");
+                false, false, 0, 1, 0, 1, 1, false, "\\");
         }
     }
 }

@@ -10,22 +10,19 @@ namespace spectrometric_thermometer
         /// </summary>
         public class Parameters
         {
-            public Parameters(float periodLength, float exposureTime, bool adaptation,
-                float adaptationET)
+            public Parameters(float periodLength, float exposureTime, bool adaptation)
             {
                 PeriodLength = periodLength;
                 ExposureTime = exposureTime;
                 Adaptation = adaptation;
-                AdaptationET = adaptationET;
             }
 
             float PeriodLength { get; set; }
             float ExposureTime { get; set; }
             bool Adaptation { get; set; }
-            float AdaptationET { get; set; }
 
             public static Parameters Parse(float periodLength, float exposureTime,
-                bool adaptation, float adaptationET, ref ISpectrometerParse spectrometer)
+                bool adaptation, ref ISpectrometerParse spectrometer)
             {
                 // Spectrometer bounds.
                 if (exposureTime < spectrometer.MinExposureTime)
@@ -39,19 +36,11 @@ namespace spectrometric_thermometer
                         "Maximal exposure time is " + spectrometer.MaxExposureTime.ToString());
                 }
                 
-                if (spectrometer.UseAdaptation)
-                {
-                    if (adaptationET < exposureTime)
-                    {
-                        throw new ArgumentException("Max ET Error!" + " Higher than exposure time.");
-                    }
-                }
-
                 return new Parameters(periodLength: periodLength, exposureTime: exposureTime,
-                    adaptation: adaptation, adaptationET: adaptationET);
+                    adaptation: adaptation);
             }
 
-            public static Parameters Parameters_Default => new Parameters(0f, 0f, false, 0f);
+            public static Parameters Parameters_Default => new Parameters(0f, 0f, false);
         }
     }
 }

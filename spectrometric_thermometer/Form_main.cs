@@ -99,18 +99,13 @@ namespace spectrometric_thermometer
                     break;
 
                 case InitializationState.Select_spectrometer:
-                    if (int.TryParse(tboxSelectSpectrometer.Text, out int choosenDevice))
+                    if (int.TryParse(tboxDeviceID.Text, out int choosenDevice))
                     {
                         if (spectrometricThermometer.BtnSelect(choosenDevice,
                             out string exposureTime, out string periodTime))
                         {
                             tBoxExposureTime.Text = exposureTime;
-                            tBoxPeriodLength.Text = periodTime;
-                            // If adaptive exposure time is enabled, show actual exposure time in lblExpTo.
-                            if ((tBoxETAdaptation.Text == "") && chBoxETAdaptation.Checked)  // Empty and allowed.
-                            {
-                                tBoxETAdaptation.Text = tBoxExposureTime.Text;
-                            }
+                            tBoxPeriod.Text = periodTime;
                             initializationState = InitializationState.Connected;
                         }
                     }
@@ -162,11 +157,10 @@ namespace spectrometric_thermometer
                             save: chBoxSave.Checked,
                             rewrite: chBoxRewrite.Checked,
                             filenameIndex: tBoxFilenameIndex.Text,
-                            periodLength: tBoxPeriodLength.Text,
+                            periodLength: tBoxPeriod.Text,
                             average: tBoxAverage.Text,
                             exposureTime: tBoxExposureTime.Text,
-                            adaptation: chBoxETAdaptation.Checked,
-                            adaptationMaxExposureTime: tBoxETAdaptation.Text,
+                            adaptation: chBoxAutoExposureTime.Checked,
                             filename: tBoxFilename.Text);
                     }
                     catch (ArgumentException ex)
@@ -184,7 +178,7 @@ namespace spectrometric_thermometer
                     if (spectrometricThermometer.BtnStopMeasurement())
                     {
                         //LabelBold(lblSetExp, false);  // Stop.
-                        LabelBold(lblETAdaptation, false);  // Stop.
+                        LabelBold(lblAutoExposureTime, false);  // Stop.
                         LabelBold(lblAverage, false);  // Stop.
 
                         My_msg("Stop");
@@ -199,7 +193,7 @@ namespace spectrometric_thermometer
             }
 
             // Disable settings while measuring.
-            pnlSettings.Enabled = measuringState == MeasuringState.Idle;
+            pnlMain.Enabled = measuringState == MeasuringState.Idle;
             btnMeasure.Text = constants.btnMeasureText[(int)measuringState];
         }
 
@@ -242,7 +236,14 @@ namespace spectrometric_thermometer
         private void BtnDefaultSize_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Normal;
-            this.Size = constants.defaultSize;
+            if (ModifierKeys.HasFlag(Keys.Control))
+            {
+                this.Size = this.MinimumSize;
+            }
+            else
+            {
+                this.Size = constants.defaultSize;
+            }
         }
 
         private void BtnExit_Click(object sender, EventArgs e) => Close();
@@ -404,20 +405,6 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
-        /// Adapt the exposure time according to saturation?
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ChBoxAdaptation_CheckedChanged(object sender, EventArgs e)
-        {
-            tBoxETAdaptation.Enabled = chBoxETAdaptation.Checked;
-            if (tBoxETAdaptation.Text == "" && chBoxETAdaptation.Checked)  // Empty and just enabled.
-            {
-                tBoxETAdaptation.Text = tBoxExposureTime.Text;
-            }
-        }
-
-        /// <summary>
         /// PID regulation on/off.
         /// </summary>
         /// <param name="sender"></param>
@@ -510,10 +497,10 @@ namespace spectrometric_thermometer
         private void Form_main_Load(object sender, EventArgs e)
         {
             {
-                TextBox[] textBoxes = pnl2.Controls.OfType<TextBox>().ToArray();
+                TextBox[] textBoxes = pnlTemp.Controls.OfType<TextBox>().ToArray();
                 for (int i = 0; i < textBoxes.Length; i++)
                 {
-                    textBoxes[i].TextChanged += Pln2_textBoxes_TextChanged;
+                    textBoxes[i].TextChanged += PlnTemp_textBoxes_TextChanged;
                 }
             }
             // Change MsgBox language from CZ to ENG.
@@ -563,46 +550,37 @@ namespace spectrometric_thermometer
             //BtnInit_Click(this, EventArgs.Empty);
             //BtnInit_Click(this, EventArgs.Empty);
             //BtnMeas_Click(this, EventArgs.Empty);
-
+            
             BtnDefaultSize_Click(this, EventArgs.Empty);
             this.CenterToScreen();
         }
 
         /// <summary>
-        /// Redraw GUI when size changed.
-        /// Implemented as difference to defaultSize const.
+        /// Redraw GUI when size changes.
+        /// Implemented as difference to <see cref="Constants.defaultSize"/>.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void Form_main_SizeChanged(object sender, EventArgs e)
         {
-            // Horizontal.
-            // How much wider than default.
-            int delta = this.Size.Width - constants.defaultSize.Width;
-
-            formsPlotLeft.Width = formsPlotRight.Width = constants.formsPlotSize + (delta / 2);
-            // pictureBox1.Location is constant.
-            // 458 = default pictureBox2.Location.X
+            int horizontal = this.Size.Width - constants.defaultSize.Width;
+            formsPlotLeft.Width = formsPlotRight.Width = constants.formsPlotSize + (horizontal / 2);
+            // pictureBoxLeft.Location is constant.
             formsPlotRight.Location = new Point(
-                (constants.formsPlotSize + 12) + (delta / 2),  // X
-                formsPlotRight.Location.Y);  // Y
+                x: (constants.formsPlotSize + 12) + (horizontal / 2),
+                y: formsPlotRight.Location.Y);
+            if (horizontal < 0)  // From now on, no change between minimum and default.
+                horizontal = 0;
+            pnlMain.Left = 323 + horizontal;  // 323 = pnlSettings default left.
+            pnlTemp.Left = 637 + horizontal;  // 637 = pnl2 default left.
+            pnlPID.Left = 749 + horizontal;  // 749 = pnl2 default left.
+            tBoxLog.Width = 199 + horizontal;  // 199 = tBoxLog default width.
+            lineShapePlot.X2 = 904 + horizontal;  // 904 = lineShape1 default X2.
 
-            // Follows part, which is constant between minimum and default.
-            if (delta < 0)
-                delta = 0;
-            pnlSettings.Left = 323 + delta;  // 323 = pnlSettings default left.
-            pnl2.Left = 642 + delta;  // 642 = pnl2 default left.
-            tBoxLog.Width = 199 + delta;  // 199 = tBoxLog default width.
-            lineShape1.X2 = 903 + delta;  // 903 = lineShape1 default X2.
+            int vertical = this.Size.Height - constants.defaultSize.Height;
+            formsPlotLeft.Height = formsPlotRight.Height = constants.formsPlotSize + vertical;
 
-            // Vertical.
-            delta = this.Size.Height - constants.defaultSize.Height;
-            formsPlotLeft.Height = formsPlotRight.Height = constants.formsPlotSize + delta;
-
-            if (plt1 != null && plt2 != null)
-            {
-                Plot(null, null);  // Render only.
-            }
+            chBoxPlot.Enabled = this.Size != this.MinimumSize;
         }
 
         /// <summary>
@@ -652,7 +630,7 @@ namespace spectrometric_thermometer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Pln2_textBoxes_TextChanged(object sender, EventArgs e)
+        private void PlnTemp_textBoxes_TextChanged(object sender, EventArgs e)
         {
             try
             {
@@ -681,6 +659,8 @@ namespace spectrometric_thermometer
             IMeasurementPlot measurement,
             SpectrometricThermometer.ITemperatureHistory temperatureHistory)
         {
+            if (!(chBoxPlot.Checked && chBoxPlot.Enabled)) { return; }
+            if (plt1 == null || plt2 == null) { return; }
 
             // Figure 1.
             if (measurement != null)
@@ -781,9 +761,9 @@ namespace spectrometric_thermometer
 
         private void Spectrometer_ExposureFinished(object sender, Spectrometer.ExposureFinishedEventArgs e)
         {
-            if (chBoxETAdaptation.Checked)
+            if (chBoxAutoExposureTime.Checked)
             {
-                LabelBold(lblETAdaptation, e.Adapted);
+                LabelBold(lblAutoExposureTime, e.Adapted);
                 tBoxExposureTime.Text = string.Format("{0:#.00}", e.ExposureTime);
             }
         }
