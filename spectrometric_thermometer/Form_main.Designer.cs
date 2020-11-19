@@ -45,9 +45,7 @@
             this.lblFilename = new System.Windows.Forms.Label();
             this.lblFilenameIndex = new System.Windows.Forms.Label();
             this.lblRewrite = new System.Windows.Forms.Label();
-            this.chBoxPlot = new System.Windows.Forms.CheckBox();
-            this.lblPlot = new System.Windows.Forms.Label();
-            this.cBoxDeviceType = new System.Windows.Forms.ComboBox();
+            this.coBoxDeviceType = new System.Windows.Forms.ComboBox();
             this.lblDeviceType = new System.Windows.Forms.Label();
             this.tboxDeviceID = new System.Windows.Forms.TextBox();
             this.lblDeviceID = new System.Windows.Forms.Label();
@@ -56,6 +54,8 @@
             this.lineShape3 = new Microsoft.VisualBasic.PowerPacks.LineShape();
             this.lineShape2 = new Microsoft.VisualBasic.PowerPacks.LineShape();
             this.lblSave = new System.Windows.Forms.Label();
+            this.chBoxPlot = new System.Windows.Forms.CheckBox();
+            this.lblPlot = new System.Windows.Forms.Label();
             this.btnReloadConfig = new System.Windows.Forms.Button();
             this.tBoxLog = new System.Windows.Forms.TextBox();
             this.btnHelp = new System.Windows.Forms.Button();
@@ -69,11 +69,12 @@
             this.lblLED = new System.Windows.Forms.Label();
             this.lblPIDAverage = new System.Windows.Forms.Label();
             this.lblVoltageStep = new System.Windows.Forms.Label();
+            this.btnDefaultSize = new System.Windows.Forms.Button();
             this.pnlTemp = new System.Windows.Forms.Panel();
             this.btnSaveTemperatures = new System.Windows.Forms.Button();
             this.btnLoadSpectra = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
-            this.cBoxCalibration = new System.Windows.Forms.ComboBox();
+            this.coBoxCalibration = new System.Windows.Forms.ComboBox();
             this.btnPlotCalibration = new System.Windows.Forms.Button();
             this.tBoxVoltageStep = new System.Windows.Forms.TextBox();
             this.tBoxSetpoint = new System.Windows.Forms.TextBox();
@@ -86,15 +87,16 @@
             this.lblOutputVoltage = new System.Windows.Forms.Label();
             this.lblRamp = new System.Windows.Forms.Label();
             this.btnSwitch = new System.Windows.Forms.Button();
-            this.btnDefaultSize = new System.Windows.Forms.Button();
             this.formsPlotLeft = new ScottPlot.FormsPlot();
             this.formsPlotRight = new ScottPlot.FormsPlot();
             this.shapeContainer1 = new Microsoft.VisualBasic.PowerPacks.ShapeContainer();
             this.lineShapePlot = new Microsoft.VisualBasic.PowerPacks.LineShape();
             this.pnlPID = new System.Windows.Forms.Panel();
+            this.pnlPlot = new System.Windows.Forms.Panel();
             this.pnlMain.SuspendLayout();
             this.pnlTemp.SuspendLayout();
             this.pnlPID.SuspendLayout();
+            this.pnlPlot.SuspendLayout();
             this.SuspendLayout();
             // 
             // pnlMain
@@ -114,7 +116,7 @@
             this.pnlMain.Controls.Add(this.lblFilename);
             this.pnlMain.Controls.Add(this.lblFilenameIndex);
             this.pnlMain.Controls.Add(this.lblRewrite);
-            this.pnlMain.Controls.Add(this.cBoxDeviceType);
+            this.pnlMain.Controls.Add(this.coBoxDeviceType);
             this.pnlMain.Controls.Add(this.lblDeviceType);
             this.pnlMain.Controls.Add(this.tboxDeviceID);
             this.pnlMain.Controls.Add(this.lblDeviceID);
@@ -142,7 +144,7 @@
             this.lblAutoExposureTime.TabIndex = 12;
             this.lblAutoExposureTime.Text = "Autoexposure";
             this.lblAutoExposureTime.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.toolTip1.SetToolTip(this.lblAutoExposureTime, "Automatic exposure adaptation");
+            this.toolTip1.SetToolTip(this.lblAutoExposureTime, "Avoiding saturation");
             // 
             // tBoxAverage
             // 
@@ -158,6 +160,7 @@
             this.tBoxExposureTime.Name = "tBoxExposureTime";
             this.tBoxExposureTime.Size = new System.Drawing.Size(50, 20);
             this.tBoxExposureTime.TabIndex = 3;
+            this.tBoxExposureTime.Text = "0.5";
             // 
             // lblExposureTime
             // 
@@ -174,6 +177,7 @@
             this.tBoxPeriod.Name = "tBoxPeriod";
             this.tBoxPeriod.Size = new System.Drawing.Size(50, 20);
             this.tBoxPeriod.TabIndex = 2;
+            this.tBoxPeriod.Text = "1";
             // 
             // lblPeriod
             // 
@@ -263,35 +267,15 @@
             this.lblRewrite.Text = "Rewrite";
             this.lblRewrite.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // chBoxPlot
+            // coBoxDeviceType
             // 
-            this.chBoxPlot.AutoSize = true;
-            this.chBoxPlot.Checked = true;
-            this.chBoxPlot.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chBoxPlot.Location = new System.Drawing.Point(423, 172);
-            this.chBoxPlot.Name = "chBoxPlot";
-            this.chBoxPlot.Size = new System.Drawing.Size(15, 14);
-            this.chBoxPlot.TabIndex = 18;
-            this.chBoxPlot.UseVisualStyleBackColor = true;
-            // 
-            // lblPlot
-            // 
-            this.lblPlot.Location = new System.Drawing.Point(326, 168);
-            this.lblPlot.Name = "lblPlot";
-            this.lblPlot.Size = new System.Drawing.Size(91, 20);
-            this.lblPlot.TabIndex = 19;
-            this.lblPlot.Text = "Plot";
-            this.lblPlot.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // cBoxDeviceType
-            // 
-            this.cBoxDeviceType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cBoxDeviceType.FormattingEnabled = true;
-            this.cBoxDeviceType.Location = new System.Drawing.Point(99, 1);
-            this.cBoxDeviceType.Margin = new System.Windows.Forms.Padding(2);
-            this.cBoxDeviceType.Name = "cBoxDeviceType";
-            this.cBoxDeviceType.Size = new System.Drawing.Size(108, 21);
-            this.cBoxDeviceType.TabIndex = 0;
+            this.coBoxDeviceType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.coBoxDeviceType.FormattingEnabled = true;
+            this.coBoxDeviceType.Location = new System.Drawing.Point(99, 1);
+            this.coBoxDeviceType.Margin = new System.Windows.Forms.Padding(2);
+            this.coBoxDeviceType.Name = "coBoxDeviceType";
+            this.coBoxDeviceType.Size = new System.Drawing.Size(108, 21);
+            this.coBoxDeviceType.TabIndex = 0;
             // 
             // lblDeviceType
             // 
@@ -367,6 +351,26 @@
             this.lblSave.TabIndex = 5;
             this.lblSave.Text = "Save";
             this.lblSave.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // chBoxPlot
+            // 
+            this.chBoxPlot.AutoSize = true;
+            this.chBoxPlot.Checked = true;
+            this.chBoxPlot.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chBoxPlot.Location = new System.Drawing.Point(99, 4);
+            this.chBoxPlot.Name = "chBoxPlot";
+            this.chBoxPlot.Size = new System.Drawing.Size(15, 14);
+            this.chBoxPlot.TabIndex = 18;
+            this.chBoxPlot.UseVisualStyleBackColor = true;
+            // 
+            // lblPlot
+            // 
+            this.lblPlot.Location = new System.Drawing.Point(3, 0);
+            this.lblPlot.Name = "lblPlot";
+            this.lblPlot.Size = new System.Drawing.Size(91, 20);
+            this.lblPlot.TabIndex = 19;
+            this.lblPlot.Text = "Plot";
+            this.lblPlot.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // btnReloadConfig
             // 
@@ -491,12 +495,23 @@
             this.lblVoltageStep.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.toolTip1.SetToolTip(this.lblVoltageStep, "Maximal voltage step");
             // 
+            // btnDefaultSize
+            // 
+            this.btnDefaultSize.Location = new System.Drawing.Point(12, 120);
+            this.btnDefaultSize.Name = "btnDefaultSize";
+            this.btnDefaultSize.Size = new System.Drawing.Size(100, 30);
+            this.btnDefaultSize.TabIndex = 3;
+            this.btnDefaultSize.Text = "&Default size";
+            this.toolTip1.SetToolTip(this.btnDefaultSize, "Ctrl to shrink");
+            this.btnDefaultSize.UseVisualStyleBackColor = true;
+            this.btnDefaultSize.Click += new System.EventHandler(this.BtnDefaultSize_Click);
+            // 
             // pnlTemp
             // 
             this.pnlTemp.Controls.Add(this.btnSaveTemperatures);
             this.pnlTemp.Controls.Add(this.btnLoadSpectra);
             this.pnlTemp.Controls.Add(this.btnClear);
-            this.pnlTemp.Controls.Add(this.cBoxCalibration);
+            this.pnlTemp.Controls.Add(this.coBoxCalibration);
             this.pnlTemp.Controls.Add(this.btnPlotCalibration);
             this.pnlTemp.Location = new System.Drawing.Point(637, 12);
             this.pnlTemp.Name = "pnlTemp";
@@ -533,16 +548,16 @@
             this.btnClear.UseVisualStyleBackColor = true;
             this.btnClear.Click += new System.EventHandler(this.BtnClear_Click);
             // 
-            // cBoxCalibration
+            // coBoxCalibration
             // 
-            this.cBoxCalibration.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cBoxCalibration.FormattingEnabled = true;
-            this.cBoxCalibration.Location = new System.Drawing.Point(3, 112);
-            this.cBoxCalibration.Margin = new System.Windows.Forms.Padding(2);
-            this.cBoxCalibration.Name = "cBoxCalibration";
-            this.cBoxCalibration.Size = new System.Drawing.Size(100, 21);
-            this.cBoxCalibration.TabIndex = 3;
-            this.cBoxCalibration.SelectedIndexChanged += new System.EventHandler(this.CBoxCalibration_SelectedIndexChanged);
+            this.coBoxCalibration.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.coBoxCalibration.FormattingEnabled = true;
+            this.coBoxCalibration.Location = new System.Drawing.Point(3, 112);
+            this.coBoxCalibration.Margin = new System.Windows.Forms.Padding(2);
+            this.coBoxCalibration.Name = "coBoxCalibration";
+            this.coBoxCalibration.Size = new System.Drawing.Size(100, 21);
+            this.coBoxCalibration.TabIndex = 3;
+            this.coBoxCalibration.SelectedIndexChanged += new System.EventHandler(this.CBoxCalibration_SelectedIndexChanged);
             // 
             // btnPlotCalibration
             // 
@@ -652,17 +667,6 @@
             this.btnSwitch.UseVisualStyleBackColor = true;
             this.btnSwitch.Click += new System.EventHandler(this.BtnSwitch_Click);
             // 
-            // btnDefaultSize
-            // 
-            this.btnDefaultSize.Location = new System.Drawing.Point(12, 120);
-            this.btnDefaultSize.Name = "btnDefaultSize";
-            this.btnDefaultSize.Size = new System.Drawing.Size(100, 30);
-            this.btnDefaultSize.TabIndex = 3;
-            this.btnDefaultSize.Text = "&Default size";
-            this.toolTip1.SetToolTip(this.btnDefaultSize, "Ctrl to shrink");
-            this.btnDefaultSize.UseVisualStyleBackColor = true;
-            this.btnDefaultSize.Click += new System.EventHandler(this.BtnDefaultSize_Click);
-            // 
             // formsPlotLeft
             // 
             this.formsPlotLeft.BackColor = System.Drawing.Color.Transparent;
@@ -723,13 +727,21 @@
             this.pnlPID.Size = new System.Drawing.Size(155, 209);
             this.pnlPID.TabIndex = 15;
             // 
+            // pnlPlot
+            // 
+            this.pnlPlot.Controls.Add(this.lblPlot);
+            this.pnlPlot.Controls.Add(this.chBoxPlot);
+            this.pnlPlot.Location = new System.Drawing.Point(323, 168);
+            this.pnlPlot.Name = "pnlPlot";
+            this.pnlPlot.Size = new System.Drawing.Size(308, 54);
+            this.pnlPlot.TabIndex = 20;
+            // 
             // Form_main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(913, 699);
-            this.Controls.Add(this.lblPlot);
-            this.Controls.Add(this.chBoxPlot);
+            this.Controls.Add(this.pnlPlot);
             this.Controls.Add(this.pnlPID);
             this.Controls.Add(this.formsPlotLeft);
             this.Controls.Add(this.formsPlotRight);
@@ -756,6 +768,8 @@
             this.pnlTemp.ResumeLayout(false);
             this.pnlPID.ResumeLayout(false);
             this.pnlPID.PerformLayout();
+            this.pnlPlot.ResumeLayout(false);
+            this.pnlPlot.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -782,7 +796,7 @@
         internal System.Windows.Forms.Button btnMeasure;
         internal System.Windows.Forms.CheckBox chBoxAutoExposureTime;
         internal System.Windows.Forms.Label lblAutoExposureTime;
-        private System.Windows.Forms.ComboBox cBoxDeviceType;
+        private System.Windows.Forms.ComboBox coBoxDeviceType;
         internal System.Windows.Forms.Label lblDeviceType;
         internal System.Windows.Forms.Label lblAverage;
         internal System.Windows.Forms.TextBox tBoxAverage;
@@ -792,7 +806,7 @@
         private System.Windows.Forms.Panel pnlTemp;
         internal System.Windows.Forms.Button btnDefaultSize;
         internal System.Windows.Forms.Button btnPlotCalibration;
-        internal System.Windows.Forms.ComboBox cBoxCalibration;
+        internal System.Windows.Forms.ComboBox coBoxCalibration;
         internal System.Windows.Forms.Button btnClear;
         internal System.Windows.Forms.Button btnLoadSpectra;
         internal System.Windows.Forms.Button btnSaveTemperatures;
@@ -826,6 +840,7 @@
         private Microsoft.VisualBasic.PowerPacks.LineShape lineShape3;
         private Microsoft.VisualBasic.PowerPacks.LineShape lineShape4;
         private System.Windows.Forms.Panel pnlPID;
+        private System.Windows.Forms.Panel pnlPlot;
     }
 }
 

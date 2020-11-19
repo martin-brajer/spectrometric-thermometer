@@ -12,27 +12,33 @@ namespace spectrometric_thermometer
     /// </summary>
     public partial class Form_main : Form
     {
-        public SpectrometricThermometer spectrometricThermometer;
-
-        // Controls.
+        public Constants constants = Constants.Constants_EN;
         private readonly Back2Front back2Front = null;
+        public SpectrometricThermometer spectrometricThermometer;
+        private ScottPlot.Plot plotLeft;
+        public ScottPlot.Plot plotRight;
         /// <summary>
         /// Connecting device phase.
         /// </summary>
         private InitializationState initializationState = InitializationState.Initial;
-
         private MeasuringState measuringState = MeasuringState.Idle;
-        // Plotting.
-        private ScottPlot.Plot plt1;
-
-        public ScottPlot.Plot plt2;
-        public Form_main()
+        
+        /// <summary>
+        /// Set virtual LED color. Nullable - null means neutral color / off.
+        /// </summary>
+        public KnownColor? LEDColor
         {
-            InitializeComponent();
-            
-            back2Front = new Back2Front(front: this);
-            spectrometricThermometer = new SpectrometricThermometer(front: back2Front);
-            spectrometricThermometer.Measurement.AveragingFinished += Measurement_AveragingFinished;
+            set
+            {
+                if (value == null)
+                {
+                    lblLED.BackColor = Color.FromKnownColor(KnownColor.Control);
+                }
+                else
+                {
+                    lblLED.BackColor = Color.FromKnownColor((KnownColor)value);
+                }
+            }
         }
 
         /// <summary>
@@ -60,25 +66,84 @@ namespace spectrometric_thermometer
             Measuring = 1,
         }
 
-        /// <summary>
-        /// Set virtual LED color. Nullable (null means neutral color / off).
-        /// </summary>
-        public KnownColor? LEDColor
+
+        public Form_main()
         {
-            set
-            {
-                if (value == null)
-                {
-                    lblLED.BackColor = Color.FromKnownColor(KnownColor.Control);
-                }
-                else
-                {
-                    lblLED.BackColor = Color.FromKnownColor((KnownColor)value);
-                }
-            }
+            InitializeComponent();
+            
+            back2Front = new Back2Front(front: this);
+            spectrometricThermometer = new SpectrometricThermometer(front: back2Front);
+            spectrometricThermometer.Measurement.AveragingFinished += Measurement_AveragingFinished;
         }
 
-        public Constants constants = Constants.Constants_EN;
+        private void Form_main_Load(object sender, EventArgs e)
+        {
+            {
+                TextBox[] textBoxes = pnlTemp.Controls.OfType<TextBox>().ToArray();
+                for (int i = 0; i < textBoxes.Length; i++)
+                {
+                    textBoxes[i].TextChanged += PlnTemp_textBoxes_TextChanged;
+                }
+            }
+            // Change MsgBox language from CZ to ENG.
+            System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en-GB");
+            // Change language from CZ to ENG (decimal point).
+            System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-GB");
+            // Buttons.text which can change.
+            btnInitialize.Text = constants.btnInitializeText[0];
+            btnMeasure.Text = constants.btnMeasureText[0];
+            btnSwitch.Text = constants.btnSwitchText[0];
+            lblInfo.Text = "";
+            // Log message box first line.
+            My_msg(constants.initialMessage, newline: false);
+            // ComboBox initialization.
+            coBoxDeviceType.DataSource = Spectrometer.Factory.ListNames();
+            coBoxDeviceType.SelectedIndex = 0;  // Select the first item (default).
+            // Plotting.
+            plotLeft = Figs_Initialize(formsPlotLeft, constants.fig1Title, constants.fig1LabelX, constants.fig1LabelY);
+            plotRight = Figs_Initialize(formsPlotRight, constants.fig2Title, constants.fig2LabelX, constants.fig2LabelY);
+            formsPlotLeft.MouseClicked += FormsPlotLeft_MouseClicked;
+
+            // DAC.
+            try
+            {
+                spectrometricThermometer.DAC.FindPort();
+            }
+            catch (ApplicationException ex)
+            {
+                My_msg(ex.Message);
+            }
+            // ADC.
+            spectrometricThermometer.ADC = new AnalogToDigitalConverter_switcher();
+            try
+            {
+                spectrometricThermometer.ADC.FindPort();
+            }
+            catch (ApplicationException ex)
+            {
+                My_msg(ex.Message);
+                btnSwitch.Enabled = false;
+            }
+
+            BtnDefaultSize_Click(this, EventArgs.Empty);
+            this.CenterToScreen();
+        }
+
+        private void Form_main_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            spectrometricThermometer.Close();
+        }
+
+        /// <summary>
+        /// Set label font to bold (true) or regular.
+        /// </summary>
+        /// <param name="label">Target label.</param>
+        /// <param name="bold">True => bold.</param>
+        private static void LabelBold(Label label, bool bold)
+        {
+            label.Font = new Font(label.Font, bold ? FontStyle.Bold : FontStyle.Regular);
+        }
+
         /// <summary>
         /// Search for spectrometers, choose one, close the communication.
         /// </summary>
@@ -89,9 +154,9 @@ namespace spectrometric_thermometer
             switch (initializationState)
             {
                 case InitializationState.Initial:
-                    if (spectrometricThermometer.BtnInitialize(cBoxDeviceType.SelectedIndex))
+                    if (spectrometricThermometer.BtnInitialize(coBoxDeviceType.SelectedIndex))
                     {
-                        cBoxDeviceType.Enabled = false;
+                        coBoxDeviceType.Enabled = false;
                         initializationState = InitializationState.Select_spectrometer;
                         spectrometricThermometer.Spectrometer.ExposureFinished +=
                             Spectrometer_ExposureFinished;
@@ -99,13 +164,10 @@ namespace spectrometric_thermometer
                     break;
 
                 case InitializationState.Select_spectrometer:
-                    if (int.TryParse(tboxDeviceID.Text, out int choosenDevice))
+                    if (int.TryParse(tboxDeviceID.Text, out int deviceID))
                     {
-                        if (spectrometricThermometer.BtnSelect(choosenDevice,
-                            out string exposureTime, out string periodTime))
+                        if (spectrometricThermometer.BtnSelect(deviceID))
                         {
-                            tBoxExposureTime.Text = exposureTime;
-                            tBoxPeriod.Text = periodTime;
                             initializationState = InitializationState.Connected;
                         }
                     }
@@ -123,7 +185,7 @@ namespace spectrometric_thermometer
                     }
                     if (spectrometricThermometer.BtnDisconnect())
                     {
-                        cBoxDeviceType.Enabled = true;
+                        coBoxDeviceType.Enabled = true;
                         initializationState = InitializationState.Initial;
                     }
                     break;
@@ -198,22 +260,115 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
-        /// Add line to the message window.
+        /// Plot and render both charts. Accessor. Null to skip.
         /// </summary>
-        /// <param name="text">Text to be added.</param>
-        public void My_msg(string text)
+        /// <param name="measurement"></param>
+        /// <param name="temperatureHistory"></param>
+        public void Plot(
+            IMeasurementPlot measurement,
+            SpectrometricThermometer.ITemperatureHistory temperatureHistory)
         {
-            My_msg(text, true);
+            if (!(chBoxPlot.Checked && chBoxPlot.Enabled)) { return; }
+            if (measurement != null)
+            {
+                PlotLeft(measurement.Wavelengths, measurement.Intensities, measurement.MFitGraphics);
+            }
+            if (temperatureHistory != null)
+            {
+                PlotRight(temperatureHistory.Times, temperatureHistory.Temperatures);
+            }
         }
 
         /// <summary>
-        /// Set label font to bold (true) or regular.
+        /// The left plot is mainly used for spectra.
         /// </summary>
-        /// <param name="label">Target label.</param>
-        /// <param name="bold">True => bold.</param>
-        private static void LabelBold(Label label, bool bold)
+        /// <param name="wavelengths"></param>
+        /// <param name="intensities"></param>
+        /// <param name="fitGraphics"></param>
+        private void PlotLeft(double[] wavelengths, double[] intensities,
+            Measurement.FitGraphics fitGraphics)
         {
-            label.Font = new Font(label.Font, bold ? FontStyle.Bold : FontStyle.Regular);
+            if (plotLeft == null) { return; }
+
+            plotLeft.YLabel(constants.fig1LabelY);
+            plotLeft.XLabel(constants.fig1Title);
+            plotLeft.AxisAuto(horizontalMargin: .9, verticalMargin: .5);
+            plotLeft.Axis(null, null, 0, null);
+            plotLeft.Clear();
+            plotLeft.PlotScatter(wavelengths, intensities,
+                markerSize: 0, color: Color.Red, lineWidth: 0.1);
+
+            if (!fitGraphics.IsEmpty)
+            {
+                // Plot fit lines and crossing point.
+                plotLeft.PlotScatter(fitGraphics.LeftLineXs, fitGraphics.LeftLineYs,
+                    markerSize: 0, color: Color.Black);
+                plotLeft.PlotScatter(fitGraphics.RightLineXs, fitGraphics.RightLineYs,
+                    markerSize: 0, color: Color.Black);
+                plotLeft.PlotPoint(fitGraphics.Crossing.X, fitGraphics.Crossing.Y,
+                    markerSize: 5, color: Color.Blue);
+                
+                // Mark points where fitting occured.
+                double[] x, y;
+                // Left line.
+                (x, y) = fitGraphics.MarkedPlotLeft(wavelengths, intensities);
+                plotLeft.PlotScatter(x, y, markerSize: 3, color: Color.Black, lineWidth: 0);
+                // Right line.
+                (x, y) = fitGraphics.MarkedPlotLeft(wavelengths, intensities);
+                plotLeft.PlotScatter(x, y, markerSize: 3, color: Color.Black, lineWidth: 0);
+            }
+            formsPlotLeft.Render();
+        }
+
+        /// <summary>
+        /// The right plot is mainly used for temperature history.
+        /// </summary>
+        /// <param name="times"></param>
+        /// <param name="temperatures"></param>
+        private void PlotRight(double[] times, double[] temperatures)
+        {
+            if (plotRight == null) { return; }
+
+            if (temperatures.Length > 0)
+            {
+                // Axis.
+                if (temperatures.Length == 1)
+                {
+                    plotRight.Axis(times[0] - 1, times[0] + 1, temperatures[0] - 1, temperatures[0] + 1);
+                }
+                else
+                {
+                    double? timesMin = null, timesMax = null;
+                    double? temperaturesMin = null, temperaturesMax = null;
+                    bool timesEqual = times.Min() == times.Max();
+                    bool temperatureEqual = temperatures.Min() == temperatures.Max();
+
+                    if (timesEqual)
+                    {
+                        timesMin = times.Min() - 1;
+                        timesMax = times.Max() + 1;
+                    }
+                    if (temperatureEqual)
+                    {
+                        temperaturesMin = temperatures.Min() - 1;
+                        temperaturesMax = temperatures.Max() + 1;
+                    }
+                    if (!(timesEqual || temperatureEqual))  // Main case.
+                    {
+                        plotRight.AxisAuto(.9, .5);
+                        if (times.Min() >= 0)
+                        {
+                            timesMin = 0d;
+                        };
+                    }
+                    plotRight.Axis(timesMin, timesMax, temperaturesMin, temperaturesMax);
+                }
+                
+                // Plot.
+                plotRight.Clear();
+                plotRight.PlotScatter(times, temperatures, color: Color.Red);
+            }
+            formsPlotRight.Render();
         }
 
         /// <summary>
@@ -224,8 +379,7 @@ namespace spectrometric_thermometer
         private void BtnClear_Click(object sender, EventArgs e)
         {
             spectrometricThermometer.ResetTemperatureHistory();
-            // Just rewriting is not enough, because PlotLines is not called for one point only.
-            plt2.Clear();
+            plotRight.Clear();
         }
 
         /// <summary>
@@ -236,17 +390,13 @@ namespace spectrometric_thermometer
         private void BtnDefaultSize_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Normal;
-            if (ModifierKeys.HasFlag(Keys.Control))
-            {
-                this.Size = this.MinimumSize;
-            }
-            else
-            {
-                this.Size = constants.defaultSize;
-            }
+            this.Size = ModifierKeys.HasFlag(Keys.Control) ? this.MinimumSize : constants.defaultSize;
         }
 
-        private void BtnExit_Click(object sender, EventArgs e) => Close();
+        private void BtnExit_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
 
         /// <summary>
         /// Show help file.
@@ -308,7 +458,7 @@ namespace spectrometric_thermometer
                         chBoxSave.Checked = save;  // Reset.
 
                         spectrometricThermometer.Measurement.IndexMax1D = -1;
-                        plt2.Title(string.Format(
+                        plotRight.Title(string.Format(
                                 "T = {0:0.0} °C",
                                 spectrometricThermometer.AnalyzeMeasurement()));
                     }
@@ -332,11 +482,11 @@ namespace spectrometric_thermometer
             {
                 y[i] = spectrometricThermometer.Measurement.Calibration.Use(x[i]);
             }
-            plt2.YLabel("Temperature (°C)");  // Set back in PlotData().
-            plt2.Title("Calibration");  // Set back in PlotData().
-            plt2.AxisAuto(horizontalMargin: .9, verticalMargin: .9);
-            plt2.Clear();
-            plt2.PlotScatter(x, y);
+            plotRight.YLabel("Temperature (°C)");  // Set back in PlotData().
+            plotRight.Title("Calibration");  // Set back in PlotData().
+            plotRight.AxisAuto(horizontalMargin: .9, verticalMargin: .9);
+            plotRight.Clear();
+            plotRight.PlotScatter(x, y);
             formsPlotRight.Render();
         }
 
@@ -401,7 +551,7 @@ namespace spectrometric_thermometer
         private void CBoxCalibration_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (spectrometricThermometer != null)
-                spectrometricThermometer.SelectCalibration(cBoxCalibration.SelectedIndex);
+                spectrometricThermometer.SelectCalibration(coBoxCalibration.SelectedIndex);
         }
 
         /// <summary>
@@ -484,77 +634,6 @@ namespace spectrometric_thermometer
             return plt;
         }
 
-        private void Form_main_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            spectrometricThermometer.Close();
-        }
-
-        /// <summary>
-        /// Initialization procedure.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Form_main_Load(object sender, EventArgs e)
-        {
-            {
-                TextBox[] textBoxes = pnlTemp.Controls.OfType<TextBox>().ToArray();
-                for (int i = 0; i < textBoxes.Length; i++)
-                {
-                    textBoxes[i].TextChanged += PlnTemp_textBoxes_TextChanged;
-                }
-            }
-            // Change MsgBox language from CZ to ENG.
-            System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en-GB");
-            // Change language from CZ to ENG (decimal point).
-            System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-GB");
-            // Buttons.text which can change.
-            btnInitialize.Text = constants.btnInitializeText[0];
-            btnMeasure.Text = constants.btnMeasureText[0];
-            btnSwitch.Text = constants.btnSwitchText[0];
-            lblInfo.Text = "";
-            // Log message box first line.
-            My_msg(constants.initialMessage, newline: false);
-            // ComboBox initialization.
-            cBoxDeviceType.DataSource = Spectrometer.Factory.ListNames();
-            cBoxDeviceType.SelectedIndex = 0;  // Select the first item (default).
-            // Plotting.
-            plt1 = Figs_Initialize(formsPlotLeft, constants.fig1Title, constants.fig1LabelX, constants.fig1LabelY);
-            plt2 = Figs_Initialize(formsPlotRight, constants.fig2Title, constants.fig2LabelX, constants.fig2LabelY);
-            formsPlotLeft.MouseClicked += FormsPlotLeft_MouseClicked;
-
-            // DAC.
-            try
-            {
-                spectrometricThermometer.DAC.FindPort();
-            }
-            catch (ApplicationException ex)
-            {
-                My_msg(ex.Message);
-            }
-            // ADC.
-            spectrometricThermometer.ADC = new AnalogToDigitalConverter_switcher();
-            try
-            {
-                spectrometricThermometer.ADC.FindPort();
-            }
-            catch (ApplicationException ex)
-            {
-                My_msg(ex.Message);
-                btnSwitch.Enabled = false;
-            }
-
-            //Start offline measurement for testing.
-            //chBoxSave.Checked = false;
-            //cBoxSpect.SelectedIndex = 2;
-            //tBoxAverage.Text = "2";
-            //BtnInit_Click(this, EventArgs.Empty);
-            //BtnInit_Click(this, EventArgs.Empty);
-            //BtnMeas_Click(this, EventArgs.Empty);
-            
-            BtnDefaultSize_Click(this, EventArgs.Empty);
-            this.CenterToScreen();
-        }
-
         /// <summary>
         /// Redraw GUI when size changes.
         /// Implemented as difference to <see cref="Constants.defaultSize"/>.
@@ -572,8 +651,9 @@ namespace spectrometric_thermometer
             if (horizontal < 0)  // From now on, no change between minimum and default.
                 horizontal = 0;
             pnlMain.Left = 323 + horizontal;  // 323 = pnlSettings default left.
-            pnlTemp.Left = 637 + horizontal;  // 637 = pnl2 default left.
-            pnlPID.Left = 749 + horizontal;  // 749 = pnl2 default left.
+            pnlPlot.Left = 323 + horizontal;  // 323 = pnlPlot default left.
+            pnlTemp.Left = 637 + horizontal;  // 637 = pnlTemp default left.
+            pnlPID.Left = 749 + horizontal;  // 749 = pnlPID default left.
             tBoxLog.Width = 199 + horizontal;  // 199 = tBoxLog default width.
             lineShapePlot.X2 = 904 + horizontal;  // 904 = lineShape1 default X2.
 
@@ -593,13 +673,13 @@ namespace spectrometric_thermometer
         {
             if (e.Button != MouseButtons.Left) { return; }
 
-            double clickedWavelength = plt1.CoordinateFromPixelX(e.X);
+            double clickedWavelength = plotLeft.CoordinateFromPixelX(e.X);
             if (ModifierKeys.HasFlag(Keys.Control))
             {
                 // If clicked at app start.
                 if (spectrometricThermometer.Measurement.Wavelengths == null)
                     return;
-                plt2.Title(string.Format(
+                plotRight.Title(string.Format(
                     "T = {0:0.0} °C",
                     spectrometricThermometer.AnalyzeMeasurement(clickedWavelength)));
                 Plot(
@@ -610,6 +690,34 @@ namespace spectrometric_thermometer
             {
                 My_msg(string.Format("Clicked: {0:0.0} nm", clickedWavelength));
             }
+        }
+        
+        /// <summary>
+        /// FolderBrowserDialog on doubleclick.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void TBoxFilename_DoubleClick(object sender, EventArgs e)
+        {
+            using (var fbd = new FolderBrowserDialog())
+            {
+                //fbd.RootFolder = Environment.SpecialFolder.MyComputer;
+                fbd.SelectedPath = Application.StartupPath;
+                DialogResult result = fbd.ShowDialog();
+
+                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+                    tBoxFilename.Text = Path.Combine(fbd.SelectedPath, "Spectrum");
+            }
+        }
+
+
+        /// <summary>
+        /// Add line to the message window.
+        /// </summary>
+        /// <param name="text">Text to be added.</param>
+        public void My_msg(string text)
+        {
+            My_msg(text, true);
         }
 
         /// <summary>
@@ -650,115 +758,6 @@ namespace spectrometric_thermometer
                 My_msg(ex.Message);
             }
         }
-        /// <summary>
-        /// Plot and render both charts. Null to render only.
-        /// </summary>
-        /// <param name="measurement"></param>
-        /// <param name="temperatureHistory"></param>
-        public void Plot(
-            IMeasurementPlot measurement,
-            SpectrometricThermometer.ITemperatureHistory temperatureHistory)
-        {
-            if (!(chBoxPlot.Checked && chBoxPlot.Enabled)) { return; }
-            if (plt1 == null || plt2 == null) { return; }
-
-            // Figure 1.
-            if (measurement != null)
-            {
-                double[] wavelengths = measurement.Wavelengths;
-                double[] intensities = measurement.Intensities;
-                Measurement.Fit_graphics fitGraphics = measurement.FitGraphics;
-
-                plt1.YLabel(constants.fig1LabelY);
-                plt1.XLabel(constants.fig1Title);
-                plt1.AxisAuto(horizontalMargin: .9, verticalMargin: .5);
-                plt1.Axis(null, null, 0, null);
-                plt1.Clear();
-                plt1.PlotScatter(wavelengths, intensities, color: Color.Red, markerSize: 0, lineWidth: 0.1);
-
-                //if (fitGraphics != null)
-                {
-                    plt1.PlotScatter(
-                        new double[2] { fitGraphics.LL.X, fitGraphics.LR.X },
-                        new double[2] { fitGraphics.LL.Y, fitGraphics.LR.Y },
-                        markerSize: 0, color: Color.Black);
-                    plt1.PlotScatter(
-                        new double[2] { fitGraphics.RL.X, fitGraphics.RR.X },
-                        new double[2] { fitGraphics.RL.Y, fitGraphics.RR.Y },
-                        markerSize: 0, color: Color.Black);
-                    plt1.PlotPoint(
-                        fitGraphics.Crossing.X, fitGraphics.Crossing.Y,
-                        markerSize: 5, color: Color.Blue);
-
-                    // Mark points where fitting occured.
-                    // Left line.
-                    double[] x = new double[fitGraphics.LIndexes[1]];
-                    double[] y = new double[fitGraphics.LIndexes[1]];
-                    Array.Copy(wavelengths, fitGraphics.LIndexes[0], x, 0, fitGraphics.LIndexes[1]);
-                    Array.Copy(intensities, fitGraphics.LIndexes[0], y, 0, fitGraphics.LIndexes[1]);
-                    plt1.PlotScatter(x, y, markerSize: 3, color: Color.Black, lineWidth: 0);
-                    // Right line.
-                    x = new double[fitGraphics.RIndexes[1]];
-                    y = new double[fitGraphics.RIndexes[1]];
-                    Array.Copy(wavelengths, fitGraphics.RIndexes[0], x, 0, fitGraphics.RIndexes[1]);
-                    Array.Copy(intensities, fitGraphics.RIndexes[0], y, 0, fitGraphics.RIndexes[1]);
-                    plt1.PlotScatter(x, y, markerSize: 3, color: Color.Black, lineWidth: 0);
-                }
-            }
-            formsPlotLeft.Render();
-
-            // Figure 2.
-            if (temperatureHistory != null)
-            {
-                double[] times = temperatureHistory.Times;
-                double[] temperatures = temperatureHistory.Temperatures;
-                if (temperatures.Length > 0)
-                {
-                    // Axis.
-                    if (temperatures.Length == 1)
-                    {
-                        plt2.Axis(times[0] - 1, times[0] + 1, temperatures[0] - 1, temperatures[0] + 1);
-                    }
-                    else
-                    {
-                        double? timesMin, timesMax, temperaturesMin, temperaturesMax;
-                        timesMin = timesMax = temperaturesMin = temperaturesMax = null;
-                        bool timesEqual = times.Min() == times.Max();
-                        bool temperatureEqual = temperatures.Min() == temperatures.Max();
-
-                        if (timesEqual)
-                        {
-                            timesMin = times.Min() - 1;
-                            timesMax = times.Max() + 1;
-                        }
-                        if (temperatureEqual)
-                        {
-                            temperaturesMin = temperatures.Min() - 1;
-                            temperaturesMax = temperatures.Max() + 1;
-                        }
-                        if (!(timesEqual || temperatureEqual))  // Main case.
-                        {
-                            plt2.AxisAuto(.9, .5);
-                            if (times.Min() >= 0) { timesMin = 0d; };
-                        }
-                        plt2.Axis(timesMin, timesMax, temperaturesMin, temperaturesMax);
-                    }
-                    // Plot.
-                    plt2.Clear();
-                    plt2.PlotScatter(times, temperatures, color: Color.Red);
-                }
-            }
-            formsPlotRight.Render();
-        }
-
-        private void Measurement_AveragingFinished(object sender, Measurement.AveragingFinishedEventArgs e)
-        {
-            if (e.LoadingMultipleSpectra)
-            {
-                LabelBold(lblAverage, true);
-            }
-        }
-
         private void Spectrometer_ExposureFinished(object sender, Spectrometer.ExposureFinishedEventArgs e)
         {
             if (chBoxAutoExposureTime.Checked)
@@ -767,85 +766,13 @@ namespace spectrometric_thermometer
                 tBoxExposureTime.Text = string.Format("{0:#.00}", e.ExposureTime);
             }
         }
-        /// <summary>
-        /// FolderBrowserDialog on doubleclick.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void TBoxFilename_DoubleClick(object sender, EventArgs e)
+
+        private void Measurement_AveragingFinished(object sender, Measurement.AveragingFinishedEventArgs e)
         {
-            using (var fbd = new FolderBrowserDialog())
+            if (e.LoadingMultipleSpectra)
             {
-                //fbd.RootFolder = Environment.SpecialFolder.MyComputer;
-                fbd.SelectedPath = Application.StartupPath;
-                DialogResult result = fbd.ShowDialog();
-
-                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
-                    tBoxFilename.Text = Path.Combine(fbd.SelectedPath, "Spectrum");
+                LabelBold(lblAverage, true);
             }
-        }
-        /// <summary>
-        /// GUI constants like labels or default size.
-        /// </summary>
-        public struct Constants
-        {
-            // Buttons text.
-            public readonly string[] btnInitializeText;
-            public readonly string[] btnMeasureText;
-            public readonly string[] btnSwitchText;
-            /// <summary>
-            /// Default size of the <see cref="Form_main"/> window.
-            /// </summary>
-            public readonly Size defaultSize;
-            public readonly string fig1LabelX;
-            public readonly string fig1LabelY;
-            // Plotting - Figure 1.
-            public readonly string fig1Title;
-            public readonly string fig2LabelX;
-            public readonly string fig2LabelY;
-            // Plotting - Figure 2.
-            public readonly string fig2Title;
-            public readonly int formsPlotSize;
-            public readonly string helpFileName;
-            /// <summary>
-            /// First line printed by <see cref="My_msg(string)"/> at program start.
-            /// </summary>
-            public readonly string initialMessage;
-
-            public Constants(string[] btnInitializeText, string[] btnMeasureText,
-                string[] btnSwitchText, Size defaultSize, string fig1LabelX, string fig1LabelY,
-                string fig1Title, string fig2LabelX, string fig2LabelY, string fig2Title,
-                int formsPlotSize, string helpFileName, string initialMessage)
-            {
-                this.btnInitializeText = btnInitializeText ?? throw new ArgumentNullException(nameof(btnInitializeText));
-                this.btnMeasureText = btnMeasureText ?? throw new ArgumentNullException(nameof(btnMeasureText));
-                this.btnSwitchText = btnSwitchText ?? throw new ArgumentNullException(nameof(btnSwitchText));
-                this.defaultSize = defaultSize;
-                this.fig1LabelX = fig1LabelX ?? throw new ArgumentNullException(nameof(fig1LabelX));
-                this.fig1LabelY = fig1LabelY ?? throw new ArgumentNullException(nameof(fig1LabelY));
-                this.fig1Title = fig1Title ?? throw new ArgumentNullException(nameof(fig1Title));
-                this.fig2LabelX = fig2LabelX ?? throw new ArgumentNullException(nameof(fig2LabelX));
-                this.fig2LabelY = fig2LabelY ?? throw new ArgumentNullException(nameof(fig2LabelY));
-                this.fig2Title = fig2Title ?? throw new ArgumentNullException(nameof(fig2Title));
-                this.formsPlotSize = formsPlotSize;
-                this.helpFileName = helpFileName ?? throw new ArgumentNullException(nameof(helpFileName));
-                this.initialMessage = initialMessage ?? throw new ArgumentNullException(nameof(initialMessage));
-            }
-
-            public static Constants Constants_EN => new Constants(
-                initialMessage: "Spectrometric Thermometer (version 3.5)",
-                helpFileName: "Help.pdf",
-                defaultSize: new Size(width: 929, height: 743),
-                formsPlotSize: 446,
-                fig1Title: "Spectrum",
-                fig1LabelX: "Wavelength (nm)",
-                fig1LabelY: "Intensity(a.u.)",
-                fig2Title: "T: ? °C",
-                fig2LabelX: "Time (sec)",
-                fig2LabelY: "Temperature (°C)",
-                btnInitializeText: new string[] { "&Initialize", "Choose dev&ice", "Disc&onnect" },
-                btnMeasureText: new string[] { "&Measure", "S&top" },
-                btnSwitchText: new string[] { "Pr&epare to switch", "Ab&ort" });
         }
     }
 }

@@ -70,6 +70,10 @@
   <ItemGroup>
     <Compile Include="Back2Front.cs" />
     <Compile Include="Calibration.cs" />
+    <Compile Include="Form_main.Constants.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Measurement.FitGraphics.cs" />
     <Compile Include="Spectrometer.Offline.cs" />
     <Compile Include="DigitalToAnalogConverter.cs" />
     <Compile Include="Form_main.cs">

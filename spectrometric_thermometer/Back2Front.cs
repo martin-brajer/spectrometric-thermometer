@@ -24,9 +24,9 @@ namespace spectrometric_thermometer
             {
                 if (value != null)
                 {
-                    front.cBoxCalibration.DataSource = value;
+                    front.coBoxCalibration.DataSource = value;
                 }
-                front.cBoxCalibration.SelectedIndex = 0;
+                front.coBoxCalibration.SelectedIndex = 0;
             }
         }
         public KnownColor? LEDColor { set => front.LEDColor = value; }
@@ -67,7 +67,7 @@ namespace spectrometric_thermometer
 
             if (title != null)
             {
-                front.plt2.Title(title);  // MISSING DEG C ???
+                front.plotRight.Title(title);  // MISSING DEG C ???
             }
 
             front.Plot(measurement, temperatureHistory);

@@ -80,7 +80,7 @@ namespace spectrometric_thermometer
         /// </summary>
         public int NumberOfDevicesFound { get; protected set; } = 0;
 
-        public Parameters MParameters { get; set; } = Parameters.Parameters_Default;
+        public Parameters MParameters { get; set; } = new Parameters();
 
         /// <summary>
         /// Destructor.

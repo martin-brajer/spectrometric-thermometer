@@ -8,13 +8,13 @@ namespace spectrometric_thermometer
     {
         double[] Wavelengths { get; }
         double[] Intensities { get; }
-        Measurement.Fit_graphics FitGraphics { get; }
+        Measurement.FitGraphics MFitGraphics { get; }
     }
 
     /// <summary>
     /// Spectrum measurement data-structure.
     /// </summary>
-    public class Measurement : IMeasurementPlot
+    public partial class Measurement : IMeasurementPlot
     {
         /// <summary>
         /// DateTime.ticks sum.
@@ -106,7 +106,7 @@ namespace spectrometric_thermometer
         /// <summary>
         /// Data for plotting fitting graphics.
         /// </summary>
-        public Fit_graphics FitGraphics { get; private set; }
+        public FitGraphics MFitGraphics { get; private set; }
 
         /// <summary>
         /// Constants used in FindAbsorbtionEdge(). With defaults.
@@ -114,11 +114,11 @@ namespace spectrometric_thermometer
         public Parameters MParameters { get; set; } = new Parameters
         (
             const_skip: 5,
-            const_eps:  1.2,
-            const_smooth1:  10,
-            const_smooth2:  10,
-            const_1DHalfW:  20,
-            const_slider:  0,
+            const_eps: 1.2,
+            const_smooth1: 10,
+            const_smooth2: 10,
+            const_1DHalfW: 20,
+            const_slider: 0,
             absorbtion_edge: "const");
 
         /// <summary>
@@ -320,7 +320,7 @@ namespace spectrometric_thermometer
 
                 var LIndexes = new int[2] { iLeft, iRight - iLeft + 1 };
                 var RIndexes = new int[2] { iLeft2, iRight2 - iLeft2 + 1 };
-                FitGraphics = new Fit_graphics(LL, LR, RL, RR, crossing, LIndexes, RIndexes);
+                MFitGraphics = new FitGraphics(LL, LR, RL, RR, crossing, LIndexes, RIndexes);
             }
             else
             {
@@ -568,57 +568,6 @@ namespace spectrometric_thermometer
             var _rSquared = MathNet.Numerics.GoodnessOfFit.RSquared(yFit, yy);
 
             return new Fit_Data(_popt, _rSquared);
-        }
-
-        /// <summary>
-        /// Data-structure used in Measurements class.
-        /// Store information about fitting graphics.
-        /// </summary>
-        public struct Fit_graphics
-        {
-            public Fit_graphics(PointF lL, PointF lR, PointF rL, PointF rR,
-                PointF crossing, int[] lIndexes, int[] rIndexes) : this()
-            {
-                LL = lL;
-                LR = lR;
-                RL = rL;
-                RR = rR;
-                Crossing = crossing;
-                LIndexes = lIndexes ?? throw new ArgumentNullException(nameof(lIndexes));
-                RIndexes = rIndexes ?? throw new ArgumentNullException(nameof(rIndexes));
-            }
-
-            /// <summary>
-            /// Left line, left end.
-            /// </summary>
-            public PointF LL { get; set; }
-            /// <summary>
-            /// Left line, right end.
-            /// </summary>
-            public PointF LR { get; set; }
-            /// <summary>
-            /// Right line, left end.
-            /// </summary>
-            public PointF RL { get; set; }
-            /// <summary>
-            /// Right line, right end.
-            /// </summary>
-            public PointF RR { get; set; }
-            /// <summary>
-            /// Crossing point of left and right line.
-            /// </summary>
-            public PointF Crossing { get; set; }
-
-            /// <summary>
-            /// Left line indexes, where fitting was done.
-            /// Start index and length.
-            /// </summary>
-            public int[] LIndexes { get; set; }
-            /// <summary>
-            /// Right line indexes, where fitting was done.
-            /// Start index and length.
-            /// </summary>
-            public int[] RIndexes { get; set; }
         }
 
         /// <summary>

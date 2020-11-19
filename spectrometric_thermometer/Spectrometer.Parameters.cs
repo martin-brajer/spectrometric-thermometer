@@ -10,6 +10,10 @@ namespace spectrometric_thermometer
         /// </summary>
         public class Parameters
         {
+            public Parameters()
+                : this(periodLength: 0f, exposureTime: 0f, adaptation: false)
+            { }
+
             public Parameters(float periodLength, float exposureTime, bool adaptation)
             {
                 PeriodLength = periodLength;
@@ -20,6 +24,12 @@ namespace spectrometric_thermometer
             float PeriodLength { get; set; }
             float ExposureTime { get; set; }
             bool Adaptation { get; set; }
+
+            public static Parameters Parse(string periodLength, string exposureTime,
+                bool adaptation, ref ISpectrometerParse spectrometer)
+            {
+                throw new NotImplementedException();
+            }
 
             public static Parameters Parse(float periodLength, float exposureTime,
                 bool adaptation, ref ISpectrometerParse spectrometer)
@@ -39,8 +49,6 @@ namespace spectrometric_thermometer
                 return new Parameters(periodLength: periodLength, exposureTime: exposureTime,
                     adaptation: adaptation);
             }
-
-            public static Parameters Parameters_Default => new Parameters(0f, 0f, false);
         }
     }
 }

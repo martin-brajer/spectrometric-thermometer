@@ -109,8 +109,7 @@ namespace spectrometric_thermometer
         /// Single measurement data.
         /// </summary>
         public Measurement Measurement { get; set; } = new Measurement();
-        private Parameters mParameters = Parameters.Parameters_Default;
-
+        private Parameters mParameters = new Parameters();
         public TemperatureHistory MTemperatureHistory { get; set; } = new TemperatureHistory();
 
         /// <summary>
@@ -121,37 +120,10 @@ namespace spectrometric_thermometer
             period: 4.5);
 
         /// <summary>
-        /// Filled in BtnInit_Click() => InitState.Initialize.
-        /// If no spectrometer chosen => null.
+        /// 
         /// </summary>
         public Spectrometer Spectrometer { get; set; } = null;
         
-        /// <summary>
-        /// Validity of path.
-        /// </summary>
-        /// <param name="name">Path to be checked.</param>
-        /// <returns>Correct?</returns>
-        public static bool IsValidFileNameOrPath(string name)
-        {
-            // Determines if the name is Nothing.
-            if (name is null)
-            {
-                return false;
-            }
-
-            // Determines if there are bad characters in the name.
-            foreach (char badChar in Path.GetInvalidPathChars())
-            {
-                if (name.IndexOf(badChar) > -1)
-                {
-                    return false;
-                }
-            }
-
-            // The name passes basic validation.
-            return true;
-        }
-
         /// <summary>
         /// Find absorbtion edge wavelength
         /// Add corresponding temperature and time
@@ -266,15 +238,14 @@ namespace spectrometric_thermometer
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="choosenDevice"></param>
+        /// <param name="deviceID"></param>
         /// <param name="exposurePeriodTimes"></param>
         /// <returns></returns>
-        public bool BtnSelect(int choosenDevice, out string exposureTime, out string periodTime)
+        public bool BtnSelect(int deviceID)
         {
-            exposureTime = periodTime = "";
             try
             {
-                Spectrometer.SelectDevice(choosenDevice);
+                Spectrometer.SelectDevice(deviceID);
             }
             catch (IndexOutOfRangeException ex)
             {
@@ -285,9 +256,6 @@ namespace spectrometric_thermometer
             Spectrometer.EraceDeviceList();
             Spectrometer.Open();
             Front.My_msg("Openning " + Spectrometer.ModelName + " : " + Spectrometer.SerialNo);
-
-            exposureTime = string.Format("{0:0.0}", Spectrometer.ExposureTime.ToString());
-            periodTime = string.Format("{0:0.0}", Spectrometer.Period.ToString());
             return true;
         }
 
