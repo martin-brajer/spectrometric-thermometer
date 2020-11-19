@@ -233,7 +233,7 @@ namespace spectrometric_thermometer
         /// <summary>
         /// Disconnect the device.
         /// </summary>
-        /// <returns>Should <see cref="Form_main"/> print closing message?</returns>
+        /// <returns>Should <see cref="FormMain"/> print closing message?</returns>
         public bool DisconnectDevice()
         {
             bool msg = false;  // Return value. If true, print "Closing" message.

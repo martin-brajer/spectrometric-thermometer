@@ -86,27 +86,27 @@ namespace spectrometric_thermometer
             public double[] RightLineYs => new double[2] { RL.Y, RR.Y };
 
             public Tuple<double[], double[]> MarkedPlotLeft(
-                double[] wavelengths, double[] intensities)
+                double[] x, double[] y)
             {
-                return MarkedPlot(wavelengths, intensities, MarkedLeft);
+                return MarkedPlot(x, y, MarkedLeft);
             }
 
             public Tuple<double[], double[]> MarkedPlotRight(
-                double[] wavelengths, double[] intensities)
+                double[] x, double[] y)
             {
-                return MarkedPlot(wavelengths, intensities, MarkedRight);
+                return MarkedPlot(x, y, MarkedRight);
             }
 
             private Tuple<double[], double[]> MarkedPlot(
-                double[] wavelengths, double[] intensities, int[] marked)
+                double[] x, double[] y, int[] marked)
             {
-                double[] x = new double[marked[1]];
-                double[] y = new double[marked[1]];
+                double[] xMarked = new double[marked[1]];
+                double[] yMarked = new double[marked[1]];
 
-                Array.Copy(wavelengths, marked[0], x, 0, marked[1]);
-                Array.Copy(intensities, marked[0], y, 0, marked[1]);
+                Array.Copy(x, marked[0], xMarked, 0, marked[1]);
+                Array.Copy(y, marked[0], yMarked, 0, marked[1]);
 
-                return new Tuple<double[], double[]>(x, y);
+                return Tuple.Create(xMarked, yMarked);
             }
         }
     }

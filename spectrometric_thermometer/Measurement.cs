@@ -190,7 +190,7 @@ namespace spectrometric_thermometer
             SpectraLoaded = 0;  // Reset.
             LastTemperature = Analyze();
             AveragingFinished?.Invoke(this, new AveragingFinishedEventArgs(
-                loadingMultipleSpectra: SpectraToLoad > 1,
+                multipleSpectraLoaded: SpectraToLoad > 1,
                 temperature: LastTemperature));
         }
 
@@ -582,12 +582,12 @@ namespace spectrometric_thermometer
         /// </summary>
         public class AveragingFinishedEventArgs : EventArgs
         {
-            public AveragingFinishedEventArgs(bool loadingMultipleSpectra, double temperature)
+            public AveragingFinishedEventArgs(bool multipleSpectraLoaded, double temperature)
             {
-                LoadingMultipleSpectra = loadingMultipleSpectra;
+                MultipleSpectraLoaded = multipleSpectraLoaded;
                 Temperature = temperature;
             }
-            public bool LoadingMultipleSpectra { get; private set; }
+            public bool MultipleSpectraLoaded { get; private set; }
             public double Temperature { get; private set; }
         }
     }

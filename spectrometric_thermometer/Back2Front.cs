@@ -6,13 +6,14 @@ namespace spectrometric_thermometer
 {
     public class Back2Front
     {
-        private readonly Form_main front;
+        private readonly FormMain front;
         
-        public Back2Front(Form_main front)
+        public Back2Front(FormMain front)
         {
             this.front = front;
         }
 
+        public double ExposureTime { set => front.tBoxExposureTime.Text = string.Format("{0:#.00}", value);  }
         /// <summary>
         /// Running index of next file to be saved.
         /// </summary>
@@ -39,8 +40,8 @@ namespace spectrometric_thermometer
         {
             set
             {
-                Form_main.Constants constants = front.constants;
-                string[] texts = constants.btnSwitchText;
+                FormMain.Constants constants = front.constants;
+                string[] texts = constants.BtnSwitchText;
 
                 if (value > texts.Length)
                 {
@@ -50,6 +51,7 @@ namespace spectrometric_thermometer
                 front.btnSwitch.Text = texts[value];
             }
         }
+        public double PlotRightTitleTemperature { set => front.PlotRightTitleTemperature = value;  }
 
         /// <summary>
         ///  Press STOP and DISCONNECT buttons.
@@ -61,16 +63,19 @@ namespace spectrometric_thermometer
         }
 
         public void Plot(IMeasurementPlot measurement,
-            SpectrometricThermometer.ITemperatureHistory temperatureHistory,
-            string title=null)
+            SpectrometricThermometer.ITemperatureHistory temperatureHistory)
         {
-
-            if (title != null)
-            {
-                front.plotRight.Title(title);  // MISSING DEG C ???
-            }
-
             front.Plot(measurement, temperatureHistory);
+        }
+
+        public void LabelBoldAverage(bool bold)
+        {
+            FormMain.LabelBold(front.lblAverage, bold);
+        }
+
+        public void LabelBoldAutoExposureTime(bool bold)
+        {
+            FormMain.LabelBold(front.lblAutoExposureTime, bold);
         }
 
         public void My_msg(string text) { front.My_msg(text); }

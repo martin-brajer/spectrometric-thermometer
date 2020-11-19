@@ -49,7 +49,7 @@ namespace spectrometric_thermometer
                 PeriodLength = periodLength;
                 Average = average;
                 ExposureTime = exposureTime;
-                Adaptation = adaptation;
+                AutoExposureTime = adaptation;
                 Filename = filename ?? throw new ArgumentNullException(nameof(filename));
             }
 
@@ -60,7 +60,7 @@ namespace spectrometric_thermometer
             public float PeriodLength { get; set; }
             public int Average { get; set; }
             public float ExposureTime { get; set; }
-            public bool Adaptation { get; set; }
+            public bool AutoExposureTime { get; set; }
             public string Filename { get; set; }
 
             /// <summary>

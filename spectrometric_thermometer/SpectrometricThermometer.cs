@@ -220,12 +220,6 @@ namespace spectrometric_thermometer
             return true;
         }
 
-        public bool BtnReloadConfig()
-        {
-            ConfigurationFile_Load();
-            return true;
-        }
-
         public bool BtnSaveTemperatures()
         {
             WriteColumns(
@@ -267,7 +261,7 @@ namespace spectrometric_thermometer
         public bool BtnStartMeasurement(Parameters stParameters)
         {
             mParameters = stParameters;
-            Spectrometer.UseAdaptation = stParameters.Adaptation;
+            Spectrometer.UseAdaptation = stParameters.AutoExposureTime;
             Measurement.SpectraToLoad = stParameters.Average;
 
             try
@@ -276,7 +270,7 @@ namespace spectrometric_thermometer
                 Spectrometer.MParameters = Spectrometer.Parameters.Parse(
                     periodLength: stParameters.PeriodLength,
                     exposureTime: stParameters.ExposureTime,
-                    adaptation: stParameters.Adaptation,
+                    adaptation: stParameters.AutoExposureTime,
                     spectrometer: ref spectrometer);
             }
             catch (ArgumentException ex)
@@ -321,10 +315,9 @@ namespace spectrometric_thermometer
         /// Load config from "Config.cfg".
         /// Mainly calibration files.
         /// </summary>
-        public void ConfigurationFile_Load()
+        public bool ConfigurationFile_Load()
         {
-            Regex regex = new Regex("    ");
-            //Regex regex = new Regex(delimiter);
+            Regex regex = new Regex(delimiter);
             string[] lines = File.ReadAllLines("Config.cfg");
 
             Calibrations.Clear();
@@ -503,12 +496,46 @@ namespace spectrometric_thermometer
             {
                 Front.My_msg("No calibration found!");
                 Front.BtnCalibrationEnabled = false;
-                return;
+                return true;
             }
             Front.BtnCalibrationEnabled = true;
             // ComboBox.
             Front.CBoxCalibrationDataSource = calibComboBox;
             SelectCalibration(0);
+            return true;
+        }
+
+        /// <summary>
+        /// Return last temperature.
+        /// </summary>
+        /// <param name="fileNames"></param>
+        /// <returns></returns>
+        public double BtnLoadSpectra(string[] fileNames)
+        {
+            Measurement.SpectraToLoad = 1;  // No averaging.
+
+            double temperature = -1;
+            bool save = mParameters.Save;  // Just load, no saving.
+            mParameters.Save = false;
+            foreach (string file in fileNames)
+            {
+                DateTime modification = File.GetLastWriteTime(file);
+                var waveIntens = LoadData(file);
+
+                if (!MTemperatureHistory.Any())
+                {
+                    MTemperatureHistory.TimeZero = modification;
+                }
+                Measurement.Load(
+                    wavelengths: waveIntens.Item1,
+                    intensities: waveIntens.Item2,
+                    ticks: modification.Ticks);
+
+                Measurement.IndexMax1D = -1;
+                temperature = AnalyzeMeasurement();
+            }
+            mParameters.Save = save;  // Reset.
+            return temperature;
         }
 
         /// <summary>
@@ -757,7 +784,7 @@ namespace spectrometric_thermometer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Measurement_AveragingFinished(object sender, EventArgs e)
+        private void Measurement_AveragingFinished(object sender, Measurement.AveragingFinishedEventArgs e)
         {
             // Save to file.
             if (mParameters.Save)
@@ -769,10 +796,12 @@ namespace spectrometric_thermometer
                     col1: Measurement.Wavelengths,
                     col2: Measurement.Intensities);
             }
-
-            double temperature = AnalyzeMeasurement();
-            Front.Plot(Measurement, MTemperatureHistory, title: temperature.ToString());
-            
+            if (e.MultipleSpectraLoaded)
+            {
+                Front.LabelBoldAverage(true);
+            }
+            Front.PlotRightTitleTemperature = AnalyzeMeasurement();
+            Front.Plot(Measurement, MTemperatureHistory);
         }
 
         /// <summary>
@@ -786,6 +815,12 @@ namespace spectrometric_thermometer
                 wavelengths: Spectrometer.Wavelengths,
                 intensities: Array.ConvertAll(Spectrometer.Intensities, v => (double)v),
                 ticks: Spectrometer.Time.Ticks);
+
+            if (mParameters.AutoExposureTime)
+            {
+                Front.LabelBoldAutoExposureTime(e.Adapted);
+                Front.ExposureTime = e.ExposureTime;
+            }
         }
 
         /// <summary>
