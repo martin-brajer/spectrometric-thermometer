@@ -74,6 +74,7 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Measurement.FitGraphics.cs" />
+    <Compile Include="Measurement.Parameters.cs" />
     <Compile Include="Spectrometer.Offline.cs" />
     <Compile Include="DigitalToAnalogConverter.cs" />
     <Compile Include="Form_main.cs">

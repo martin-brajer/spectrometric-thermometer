@@ -347,55 +347,55 @@ namespace spectrometric_thermometer
                 }
                 return names;
             }
-        }
-
-        /// <summary>
-        /// Describe individual spectrometer class parameters.
-        /// </summary>
-        private struct Description
-        {
+            
             /// <summary>
-            /// Creator.
+            /// Describe individual spectrometer class parameters.
             /// </summary>
-            /// <param name="name">Spectrometer name.</param>
-            /// <param name="dll">Respective dll file name.
-            /// Will be checked whether exists.</param>
-            /// <param name="device">Conected to actual Spectrometer class descendant.</param>
-            public Description(string name, string dll, Device device)
+            private struct Description
             {
-                Name = name;
-                Dll = dll;
-                Device = device;
+                /// <summary>
+                /// Creator.
+                /// </summary>
+                /// <param name="name">Spectrometer name.</param>
+                /// <param name="dll">Respective dll file name.
+                /// Will be checked whether exists.</param>
+                /// <param name="device">Conected to actual Spectrometer class descendant.</param>
+                public Description(string name, string dll, Device device)
+                {
+                    Name = name;
+                    Dll = dll;
+                    Device = device;
+                }
+
+                /// <summary>
+                /// Spectrometer type name.
+                /// </summary>
+                public string Name { get; private set; }
+
+                /// <summary>
+                /// Library (*.dll) filename.
+                /// </summary>
+                public string Dll { get; private set; }
+
+                /// <summary>
+                /// <summary>
+                /// Spectrometer type.
+                /// </summary>
+                public Device Device { get; private set; }
             }
 
             /// <summary>
-            /// Spectrometer type name.
-            /// </summary>
-            public string Name { get; private set; }
-
-            /// <summary>
-            /// Library (*.dll) filename.
-            /// </summary>
-            public string Dll { get; private set; }
-
-            /// <summary>
-            /// <summary>
             /// Spectrometer type.
+            /// To be connected to the actual Spectrometer
+            /// class descendant instance.
             /// </summary>
-            public Device Device { get; private set; }
-        }
-
-        /// <summary>
-        /// Spectrometer type.
-        /// To be connected to the actual Spectrometer
-        /// class descendant instance.
-        /// </summary>
-        public enum Device
-        {
-            /// <summary>
-            /// Virtual spectrometer for testing purposes.
-            /// </summary>
-            Offline_test = 0,
+            public enum Device
+            {
+                /// <summary>
+                /// Virtual spectrometer for testing purposes.
+                /// </summary>
+                Offline_test = 0,
+            }
         }
 
         /// <summary>

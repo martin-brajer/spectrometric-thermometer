@@ -370,7 +370,7 @@ namespace spectrometric_thermometer
                     case "const_skip":
                         {
                             if (int.TryParse(items[1], out int output))
-                                Measurement.MParameters.Const_skip = output;
+                                Measurement.MParameters.PointsToSkip = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -379,7 +379,7 @@ namespace spectrometric_thermometer
                     case "const_eps":
                         {
                             if (double.TryParse(items[1], out double output))
-                                Measurement.MParameters.Const_eps = output;
+                                Measurement.MParameters.EpsilonLimit = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -388,7 +388,7 @@ namespace spectrometric_thermometer
                     case "const_smooth1":
                         {
                             if (int.TryParse(items[1], out int output))
-                                Measurement.MParameters.Const_smooth1 = output;
+                                Measurement.MParameters.SmoothingIntensities = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -397,7 +397,7 @@ namespace spectrometric_thermometer
                     case "const_smooth2":
                         {
                             if (int.TryParse(items[1], out int output))
-                                Measurement.MParameters.Const_smooth2 = output;
+                                Measurement.MParameters.SmoothingDerivatives = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -406,7 +406,7 @@ namespace spectrometric_thermometer
                     case "const_1DHalfW":
                         {
                             if (int.TryParse(items[1], out int output))
-                                Measurement.MParameters.Const_1DHalfW = output;
+                                Measurement.MParameters.SearchHalfWidth = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -415,7 +415,7 @@ namespace spectrometric_thermometer
                     case "const_slider":
                         {
                             if (double.TryParse(items[1], out double output))
-                                Measurement.MParameters.Const_slider = output;
+                                Measurement.MParameters.SliderLimit = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));

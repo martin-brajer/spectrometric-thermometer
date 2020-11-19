@@ -109,17 +109,9 @@ namespace spectrometric_thermometer
         public FitGraphics MFitGraphics { get; private set; }
 
         /// <summary>
-        /// Constants used in FindAbsorbtionEdge(). With defaults.
+        /// Constants used in <see cref="FindAbsorptionEdge"/>. With defaults.
         /// </summary>
-        public Parameters MParameters { get; set; } = new Parameters
-        (
-            const_skip: 5,
-            const_eps: 1.2,
-            const_smooth1: 10,
-            const_smooth2: 10,
-            const_1DHalfW: 20,
-            const_slider: 0,
-            absorbtion_edge: "const");
+        public Parameters MParameters { get; set; } = new Parameters();
 
         /// <summary>
         /// Find absorbtion edge and convert
@@ -215,7 +207,7 @@ namespace spectrometric_thermometer
             // Interpolation on smoothed intensities.
             var interpolation = MathNet.Numerics.Interpolate.CubicSpline(
                 Wavelengths,
-                Smooth(Intensities, windowHalf: MParameters.Const_smooth1));
+                Smooth(Intensities, windowHalf: MParameters.SmoothingIntensities));
             // Max in smoothed first derivative.
             double[] derivative = new double[Wavelengths.Length];
             for (int i = 0; i < Wavelengths.Length; i++)
@@ -223,7 +215,7 @@ namespace spectrometric_thermometer
                 derivative[i] = interpolation.Differentiate(
                     Wavelengths[i]);
             }
-            derivative = Smooth(derivative, windowHalf: MParameters.Const_smooth2);
+            derivative = Smooth(derivative, windowHalf: MParameters.SmoothingDerivatives);
             {
                 if (IndexMax1D == -1)  // First time => search whole vector.
                 {
@@ -231,11 +223,11 @@ namespace spectrometric_thermometer
                 }
                 else  // Next time in shortened version. Still must be inside the whole one.
                 {
-                    int startIndex = IndexMax1D - MParameters.Const_1DHalfW;  // Start.
+                    int startIndex = IndexMax1D - MParameters.SearchHalfWidth;  // Start.
                     if (startIndex < 0)
                         startIndex = 0;
 
-                    int len = (2 * MParameters.Const_1DHalfW) + 1;
+                    int len = (2 * MParameters.SearchHalfWidth) + 1;
                     if (len + startIndex > Wavelengths.Length)
                         len = Wavelengths.Length - startIndex;
 
@@ -252,14 +244,14 @@ namespace spectrometric_thermometer
             double[] poptR = Inchworm(ref iLeft, ref iRight, direction: false);
             // Slide left as long as line or saddle is found.
             // Skip a few points between the two lines.
-            int slider = iLeft - MParameters.Const_skip;
+            int slider = iLeft - MParameters.PointsToSkip;
             if (slider < 0)  // Skip only if possible.
                 slider = 0;
             double derivMinimum = derivative[slider];
             while (
                 slider > 0 &&  // No OutOfRange.
                                // Search for line. Puls forgiving slider constant.
-                derivative[slider] <= derivMinimum + MParameters.Const_slider &&
+                derivative[slider] <= derivMinimum + MParameters.SliderLimit &&
                 derivative[slider] >= 0)  // Search for saddle.
             {
                 if (derivative[slider] <= derivMinimum)
@@ -439,7 +431,7 @@ namespace spectrometric_thermometer
                 // Eps should go down with number of points.
                 if (epsMax == double.MaxValue)
                 {
-                    epsMax = eps * MParameters.Const_eps;
+                    epsMax = eps * MParameters.EpsilonLimit;
                 }
             }
 
@@ -501,9 +493,9 @@ namespace spectrometric_thermometer
             double rSquareLast = 0d;
             double rSquareMin = double.MaxValue;
 
-            Fit_Data fit;
+            FitData fit;
 
-            while (rSquareLast < (rSquareMin + MParameters.Const_eps))
+            while (rSquareLast < (rSquareMin + MParameters.EpsilonLimit))
             {
                 if (direction)
                 {
@@ -516,9 +508,9 @@ namespace spectrometric_thermometer
                     iRightLoc++;
                 }
 
-                fit = Inchworm_fit(iLeftLoc, iRightLoc);
+                fit = InchwormFit(iLeftLoc, iRightLoc);
 
-                rSquareLast = Math.Log(1 - fit.RSquared);
+                rSquareLast = Math.Log(1 - fit.rSquared);
 
                 if (rSquareLast < rSquareMin)
                 {
@@ -531,7 +523,7 @@ namespace spectrometric_thermometer
             // Drop the last point.
             if (iLeft < iRight)  // Was the loop ever executed?
             {
-                return Inchworm_fit(iLeft, iRight).Popt;
+                return InchwormFit(iLeft, iRight).popt;
             }
             else
             {
@@ -545,7 +537,7 @@ namespace spectrometric_thermometer
         /// <param name="iLeft"></param>
         /// <param name="iRight"></param>
         /// <returns>Fit parameters and RSquared.</returns>
-        private Fit_Data Inchworm_fit(int iLeft, int iRight)
+        private FitData InchwormFit(int iLeft, int iRight)
         {
             int len = iRight - iLeft + 1;  // Start with three points.
             // Fit line a subarray.
@@ -567,76 +559,22 @@ namespace spectrometric_thermometer
             }
             var _rSquared = MathNet.Numerics.GoodnessOfFit.RSquared(yFit, yy);
 
-            return new Fit_Data(_popt, _rSquared);
-        }
-
-        /// <summary>
-        /// Store empirical parameters used in Measurement.FindAbsorbtionEdge().
-        /// </summary>
-        public class Parameters
-        {
-            public Parameters(int const_skip, double const_eps, int const_smooth1,
-                int const_smooth2, int const_1DHalfW, double const_slider,
-                string absorbtion_edge)
-            {
-                Const_skip = const_skip;
-                Const_eps = const_eps;
-                Const_smooth1 = const_smooth1;
-                Const_smooth2 = const_smooth2;
-                Const_1DHalfW = const_1DHalfW;
-                Const_slider = const_slider;
-                Absorbtion_edge = absorbtion_edge ?? throw new ArgumentNullException(nameof(absorbtion_edge));
-            }
-
-            /// <summary>
-            /// FindAbsorbtionEdge => skipToLeft.
-            /// </summary>
-            public int Const_skip { get; set; }
-            /// <summary>
-            /// Inchworm => rSquared minimising forgiveness.
-            /// </summary>
-            public double Const_eps { get; set; }
-            /// <summary>
-            /// FindAbsorbtionEdge => Intensities smooth window width.
-            /// </summary>
-            public int Const_smooth1 { get; set; }
-            /// <summary>
-            /// FindAbsorbtionEdge => derivatives smooth window width.
-            /// </summary>
-            public int Const_smooth2 { get; set; }
-            /// <summary>
-            /// FindAbsorbtionEdge => search around last point half-width.
-            /// </summary>
-            public int Const_1DHalfW { get; set; }
-            /// <summary>
-            /// How much the slider is forgiving.
-            /// </summary>
-            public double Const_slider { get; set; }
-            /// <summary>
-            /// Which method to use in search for the two lines.
-            /// </summary>
-            public string Absorbtion_edge { get; set; }
+            return new FitData() { popt = _popt, rSquared = _rSquared };
         }
 
         /// <summary>
         /// Data structure for fitting results.
         /// </summary>
-        public struct Fit_Data
+        public struct FitData
         {
-            public Fit_Data(double[] popt, double rSquared) : this()
-            {
-                Popt = popt ?? throw new ArgumentNullException(nameof(popt));
-                RSquared = rSquared;
-            }
-
             /// <summary>
             /// Array of fitting parameters.
             /// </summary>
-            public double[] Popt { get; }
+            public double[] popt;
             /// <summary>
             /// R squared. Goodness of fit.
             /// </summary>
-            public double RSquared { get; }
+            public double rSquared;
         }
 
         /// <summary>
