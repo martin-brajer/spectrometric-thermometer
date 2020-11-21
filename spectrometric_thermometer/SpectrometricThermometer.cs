@@ -42,7 +42,7 @@ namespace spectrometric_thermometer
             Front = front ?? throw new ArgumentNullException(nameof(front));
             
             // Events.
-            Measurement.AveragingFinished += Measurement_AveragingFinished;
+            Measurement.DataReady += SpectraProcessor_DataReady;
 
             // Config (+calibration).
             ConfigurationFile_Load();
@@ -108,7 +108,7 @@ namespace spectrometric_thermometer
         /// <summary>
         /// Single measurement data.
         /// </summary>
-        public Measurement Measurement { get; set; } = new Measurement();
+        public SpectraProcessor Measurement { get; set; } = new SpectraProcessor();
         private Parameters mParameters = new Parameters();
         public TemperatureHistory MTemperatureHistory { get; set; } = new TemperatureHistory();
 
@@ -131,9 +131,12 @@ namespace spectrometric_thermometer
         /// </summary>
         public double AnalyzeMeasurement()
         {
-            double temperature = Measurement.LastTemperature;
-            MTemperatureHistory.Add(temperature, Measurement.Time);
-            return temperature;
+            double? temperature = Measurement.Temperature;
+            if (temperature != null)
+            {
+                MTemperatureHistory.Add((double)temperature, Measurement.Time);
+            }
+            return (double)temperature;
         }
 
         /// <summary>
@@ -780,11 +783,11 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
-        /// When averaging is complete, write to file, analyze and plot.
+        /// When spectroscopic data are ready, write to file, analyze and plot.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Measurement_AveragingFinished(object sender, Measurement.AveragingFinishedEventArgs e)
+        private void SpectraProcessor_DataReady(object sender, SpectraProcessor.DataReadyEventArgs e)
         {
             // Save to file.
             if (mParameters.Save)

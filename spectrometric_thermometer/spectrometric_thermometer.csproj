@@ -73,8 +73,8 @@
     <Compile Include="FormMain.Constants.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Measurement.FitGraphics.cs" />
-    <Compile Include="Measurement.Parameters.cs" />
+    <Compile Include="SpectraProcessor.FitGraphics.cs" />
+    <Compile Include="SpectraProcessor.Parameters.cs" />
     <Compile Include="Spectrometer.Offline.cs" />
     <Compile Include="DigitalToAnalogConverter.cs" />
     <Compile Include="FormMain.cs">
@@ -83,7 +83,7 @@
     <Compile Include="FormMain.Designer.cs">
       <DependentUpon>FormMain.cs</DependentUpon>
     </Compile>
-    <Compile Include="Measurement.cs" />
+    <Compile Include="SpectraProcessor.cs" />
     <Compile Include="PIDController.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

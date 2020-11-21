@@ -78,7 +78,7 @@ namespace spectrometric_thermometer
                 plotLeft_Title: "Spectrum",
                 plotLeft_XLabel: "Wavelength (nm)",
                 plotLeft_YLabel: "Intensity(a.u.)",
-                plotRight_Title: "T: ?? °C",
+                plotRight_Title: "T: ? °C",
                 plotRight_XLabel: "Time (sec)",
                 plotRight_YLabel: "Temperature (°C)");
         }

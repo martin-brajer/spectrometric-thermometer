@@ -3,7 +3,7 @@
 namespace spectrometric_thermometer
 {
 
-    public partial class Measurement
+    public partial class SpectraProcessor
     {
         /// <summary>
         /// Store empirical parameters used in <see cref="FindAbsorptionEdge"/>.

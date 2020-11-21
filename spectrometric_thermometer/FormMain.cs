@@ -296,7 +296,7 @@ namespace spectrometric_thermometer
         /// <param name="measurement"></param>
         /// <param name="temperatureHistory"></param>
         public void Plot(
-            IMeasurementPlot measurement,
+            ISpectraProcessorPlot measurement,
             SpectrometricThermometer.ITemperatureHistory temperatureHistory)
         {
             if (!(chBoxPlot.Checked && chBoxPlot.Enabled)) { return; }
@@ -318,11 +318,11 @@ namespace spectrometric_thermometer
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="fitGraphics">Skip by null or
-        /// <see cref="Measurement.FitGraphics.Empty"/></param>
+        /// <see cref="SpectraProcessor.FitGraphics.Empty"/></param>
         /// <param name="xLabel">Fill null >> default from <see cref="Constants"/>.</param>
         /// <param name="yLabel">Fill null >> default from <see cref="Constants"/>.</param>
         private void PlotLeft(double[] x, double[] y,
-            Measurement.FitGraphics fitGraphics,
+            SpectraProcessor.FitGraphics fitGraphics,
             string xLabel = null, string yLabel = null)
         {
             if (plotLeft == null) { return; }
@@ -334,14 +334,14 @@ namespace spectrometric_thermometer
             plotLeft.Clear();
             plotLeft.PlotScatter(x, y, markerSize: 0, color: Color.Red, lineWidth: 0.1);
 
-            if (fitGraphics != null || !fitGraphics.IsEmpty)
+            if (!SpectraProcessor.FitGraphics.IsNullOrEmpty(fitGraphics))
             {
                 // Plot fit lines and crossing point.
                 plotLeft.PlotScatter(fitGraphics.LeftLineXs, fitGraphics.LeftLineYs,
                     markerSize: 0, color: Color.Black);
                 plotLeft.PlotScatter(fitGraphics.RightLineXs, fitGraphics.RightLineYs,
                     markerSize: 0, color: Color.Black);
-                plotLeft.PlotPoint(fitGraphics.Crossing.X, fitGraphics.Crossing.Y,
+                plotLeft.PlotPoint(fitGraphics.Intersection.X, fitGraphics.Intersection.Y,
                     markerSize: 5, color: Color.Blue);
                 
                 // Mark points where fitting occured.

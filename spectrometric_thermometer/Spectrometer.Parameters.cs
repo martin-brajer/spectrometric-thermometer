@@ -2,7 +2,6 @@
 
 namespace spectrometric_thermometer
 {
-
     public abstract partial class Spectrometer
     {
         /// <summary>

@@ -62,7 +62,7 @@ namespace spectrometric_thermometer
             front.BtnInitialize_Click(sender: this, e: EventArgs.Empty);
         }
 
-        public void Plot(IMeasurementPlot measurement,
+        public void Plot(ISpectraProcessorPlot measurement,
             SpectrometricThermometer.ITemperatureHistory temperatureHistory)
         {
             front.Plot(measurement, temperatureHistory);
