@@ -61,7 +61,6 @@ namespace spectrometric_thermometer
         /// Setter also resets number of loaded spectra.
         /// </summary>
         public int SpectraToLoad { get; set; } = 1;
-
         /// <summary>
         /// How many spectra has already been loaded.
         /// If full, invoke <see cref="OnDataReady"/> event.
@@ -77,6 +76,33 @@ namespace spectrometric_thermometer
                     OnDataReady();
                 }
             }
+        }
+
+        /// <summary>
+        /// Event invoking method on finished exposure.
+        /// If allowed, run <see cref="ExposureTimeAdaptation"/>
+        /// and send info through <see cref="EventArgs"/>.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected virtual void OnDataReady()
+        {
+            intensitiesBuffer = SmoothPointPeaks(intensitiesBuffer);
+            if (SpectraLoaded > 1)
+            {
+                Intensities = intensitiesBuffer.Select(r => r / SpectraLoaded).ToArray();
+            }
+            else
+            {
+                Intensities = intensitiesBuffer;
+            }
+            Time = new DateTime(timeBufferTicks / SpectraLoaded);
+
+            SpectraLoaded = 0;  // Reset.
+            Temperature = Analyze();
+            DataReady?.Invoke(this, new DataReadyEventArgs(
+                multipleSpectraLoaded: SpectraToLoad > 1,
+                temperature: (double)Temperature));
         }
 
         /// <summary>
@@ -119,7 +145,6 @@ namespace spectrometric_thermometer
                 timeBufferTicks = ticks;
 
                 SpectraLoaded = 1;
-                //return false;
             }
             // Add new data to already set up object.
             else
@@ -128,37 +153,8 @@ namespace spectrometric_thermometer
                 timeBufferTicks += ticks;
 
                 SpectraLoaded++;
-                //return true;
             }
         }
-
-        /// <summary>
-        /// Event invoking method on finished exposure.
-        /// If allowed, run <see cref="ExposureTimeAdaptation"/>
-        /// and send info through <see cref="EventArgs"/>.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        protected virtual void OnDataReady()
-        {
-            SmoothOutPeaks(ref intensitiesBuffer);
-            if (SpectraLoaded > 1)
-            {
-                Intensities = intensitiesBuffer.Select(r => r / SpectraLoaded).ToArray();
-            }
-            else
-            {
-                Intensities = intensitiesBuffer;
-            }
-            Time = new DateTime(timeBufferTicks / SpectraLoaded);
-
-            SpectraLoaded = 0;  // Reset.
-            Temperature = Analyze();
-            DataReady?.Invoke(this, new DataReadyEventArgs(
-                multipleSpectraLoaded: SpectraToLoad > 1,
-                temperature: (double)Temperature));
-        }
-
 
         /// <summary>
         /// Find absorption edge.
@@ -172,7 +168,7 @@ namespace spectrometric_thermometer
             // Interpolation on smoothed intensities.
             var interpolation = MathNet.Numerics.Interpolate.CubicSpline(
                 Wavelengths,
-                Smooth(Intensities, windowHalf: MParameters.SmoothingIntensities));
+                SmoothBoxcar(Intensities, windowHalf: MParameters.SmoothingIntensities));
             // Max in smoothed first derivative.
             double[] derivative = new double[Wavelengths.Length];
             for (int i = 0; i < Wavelengths.Length; i++)
@@ -180,7 +176,7 @@ namespace spectrometric_thermometer
                 derivative[i] = interpolation.Differentiate(
                     Wavelengths[i]);
             }
-            derivative = Smooth(derivative, windowHalf: MParameters.SmoothingDerivatives);
+            derivative = SmoothBoxcar(derivative, windowHalf: MParameters.SmoothingDerivatives);
             {
                 if (IndexMax1D == -1)  // First time => search whole vector.
                 {
@@ -256,8 +252,8 @@ namespace spectrometric_thermometer
             // Setting up the fitting graphics. See documentation.
             if (poptRight != null && poptLeft != null)
             {
-                Func<double, double[], double> Line = MathNet.Numerics.Polynomial.Evaluate;
-                double inverseRight(double y) => (y - poptRight[0]) / poptRight[1];
+                Func<double, double[], double> line = MathNet.Numerics.Polynomial.Evaluate;
+                double lineInverseRight(double y) => (y - poptRight[0]) / poptRight[1];
                 double intensitiesMax = Intensities.Max();
 
                 double W_Min = Wavelengths[0];
@@ -268,10 +264,10 @@ namespace spectrometric_thermometer
 
                 MFitGraphics = new FitGraphics(
                     leftLineXs: new[] { W_Min, W_IMax },
-                    leftLineYs: new[] { Line(W_Min, poptLeft), Line(W_IMax, poptLeft) },
-                    rightLineXs: new[] { inverseRight(0), inverseRight(intensitiesMax) },
+                    leftLineYs: new[] { line(W_Min, poptLeft), line(W_IMax, poptLeft) },
+                    rightLineXs: new[] { lineInverseRight(0), lineInverseRight(intensitiesMax) },
                     rightLineYs: new[] { 0, intensitiesMax },
-                    intersection: new PointF((float)absorptionEdge, (float)Line(absorptionEdge, poptRight)),
+                    intersection: new PointF((float)absorptionEdge, (float)line(absorptionEdge, poptRight)),
                     markedLeft: Tuple.Create(iLeft, iRight - iLeft + 1),
                     markedRight: Tuple.Create(iLeft2, iRight2 - iLeft2 + 1));
             }
@@ -281,56 +277,6 @@ namespace spectrometric_thermometer
                 IndexMax1D = -1;
             }
             return absorptionEdge;
-        }
-
-        /// <summary>
-        /// Smooth input line by boxcar.
-        /// Static.
-        /// </summary>
-        /// <param name="input"></param>
-        /// <param name="windowHalf">Window width is 2 * wH + 1.</param>
-        /// <returns>Inpput-like.</returns>
-        public static double[] Smooth(double[] input, int windowHalf = 5)
-        {
-            if (windowHalf == 0)
-                return input;
-
-            int len = input.Length;
-            double sum;
-            double[] output = new double[len];
-
-            for (int pos = 0; pos < len; pos++)
-            {
-                int left = windowHalf;
-                if (pos - left < 0) left = pos;
-                int right = windowHalf;
-                if (pos + right > len) right = len - pos;
-
-                sum = 0;
-                for (int i = pos - left; i < pos + right; i++)
-                    sum += input[i];
-                output[pos] = sum / (left + right + 1);
-            }
-            return output;
-        }
-
-        /// <summary>
-        /// Replace point peaks with neighbors' average.
-        /// </summary>
-        /// <param name="input"></param>
-        public static void SmoothOutPeaks(ref double[] input)
-        {
-            double average;
-
-            for (int pos = 1; pos < input.Length - 2; pos++)
-            {
-                average = (input[pos - 1] + input[pos] + input[pos + 1]) / 3;
-                // Peak in "qwe_00075" differs by 1436 to its surrounding.
-                if (input[pos] > average + 20)
-                {
-                    input[pos] = (input[pos - 1] + input[pos + 1]) / 2;
-                }
-            }
         }
 
         /// <summary>
@@ -500,27 +446,76 @@ namespace spectrometric_thermometer
         /// <returns>Fit parameters and RSquared.</returns>
         private FitData InchwormFit(int iLeft, int iRight)
         {
-            int len = iRight - iLeft + 1;  // Start with three points.
+            int length = iRight - iLeft + 1;  // Start with three points.
             // Fit line a subarray.
             // Subarrays, where fittting takes place.
-            double[] xx = new double[len];  // Copy out.
-            double[] yy = new double[len];  // Copy out.
-            Array.Copy(Wavelengths, iLeft, xx, 0, len);
-            Array.Copy(Intensities, iLeft, yy, 0, len);
+            double[] xx = new double[length];  // Copy out.
+            double[] yy = new double[length];  // Copy out.
+            Array.Copy(Wavelengths, iLeft, xx, 0, length);
+            Array.Copy(Intensities, iLeft, yy, 0, length);
             var popt = MathNet.Numerics.Fit.Line(xx, yy);
 
             // Tuple<double, double> to  double[2].
             var _popt = new double[] { popt.Item1, popt.Item2 };
 
             // Goodness of fit.
-            double[] yFit = new double[len];
-            for (int i = 0; i < len; i++)
+            double[] yFit = new double[length];
+            for (int i = 0; i < length; i++)
             {
                 yFit[i] = MathNet.Numerics.Polynomial.Evaluate(z: Wavelengths[i + iLeft], coefficients: _popt);
             }
             var _rSquared = MathNet.Numerics.GoodnessOfFit.RSquared(yFit, yy);
 
             return new FitData() { popt = _popt, rSquared = _rSquared };
+        }
+
+        /// <summary>
+        /// Smooth input array by boxcar algorithm.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="windowHalf">Window width is (2 * windowHalf + 1).</param>
+        /// <returns>Inpput-like.</returns>
+        public static double[] SmoothBoxcar(double[] input, int windowHalf = 5)
+        {
+            if (windowHalf == 0)
+                return input;
+
+            int length = input.Length;
+            double[] output = new double[length];
+
+            for (int i = 0; i < length; i++)  // Box shifting.
+            {
+                int left = i - windowHalf < 0 ? i : windowHalf;
+                int right = i + windowHalf > length ? length - i : windowHalf;
+
+                double boxSum = 0;
+                for (int j = i - left; j < i + right; j++)  // Inside the box.
+                {
+                    boxSum += input[j];
+                }
+                output[i] = boxSum / (left + right + 1);  // Box average.
+            }
+            return output;
+        }
+
+        /// <summary>
+        /// Replace point peaks with neighbors' average.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="maxDifference">Max allowed difference of
+        /// value and neighbourhood average.</param>
+        public static double[] SmoothPointPeaks(double[] input, double maxDifference = 20)
+        {
+            for (int i = 1; i < input.Length - 2; i++)  // Ignore the first and the last point.
+            {
+                double neighbourhoodAverage = (input[i - 1] + input[i + 1]) / 2;
+                // Peak in "qwe_00075" differs by 1436 to its surrounding.
+                if (Math.Abs(input[i] - neighbourhoodAverage) > maxDifference)
+                {
+                    input[i] = neighbourhoodAverage;
+                }
+            }
+            return input;
         }
 
         /// <summary>
