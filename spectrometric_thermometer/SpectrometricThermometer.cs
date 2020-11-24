@@ -42,7 +42,7 @@ namespace spectrometric_thermometer
             Front = front ?? throw new ArgumentNullException(nameof(front));
             
             // Events.
-            Measurement.DataReady += SpectraProcessor_DataReady;
+            MSpectraProcessor.DataReady += SpectraProcessor_DataReady;
 
             // Config (+calibration).
             ConfigurationFile_Load();
@@ -108,7 +108,7 @@ namespace spectrometric_thermometer
         /// <summary>
         /// Single measurement data.
         /// </summary>
-        public SpectraProcessor Measurement { get; set; } = new SpectraProcessor();
+        public SpectraProcessor MSpectraProcessor { get; set; } = new SpectraProcessor();
         private Parameters mParameters = new Parameters();
         public TemperatureHistory MTemperatureHistory { get; set; } = new TemperatureHistory();
 
@@ -131,10 +131,10 @@ namespace spectrometric_thermometer
         /// </summary>
         public double AnalyzeMeasurement()
         {
-            double? temperature = Measurement.Temperature;
+            double? temperature = MSpectraProcessor.Temperature;
             if (temperature != null)
             {
-                MTemperatureHistory.Add((double)temperature, Measurement.Time);
+                MTemperatureHistory.Add((double)temperature, MSpectraProcessor.Time);
             }
             return (double)temperature;
         }
@@ -148,19 +148,19 @@ namespace spectrometric_thermometer
         {
             // clickedWavelength => clickedIndex.
             // Apply any defensive coding here as necessary.
-            var values = Measurement.Wavelengths;
+            var wavelengths = MSpectraProcessor.Wavelengths;
             var minDifference = double.MaxValue;
             int clickedIndex = 0;
-            for (int i = 0; i < values.Length; i++)
+            for (int i = 0; i < wavelengths.Length; i++)
             {
-                double difference = Math.Abs(values[i] - clickedWavelength);
+                double difference = Math.Abs(wavelengths[i] - clickedWavelength);
                 if (difference < minDifference)
                 {
                     minDifference = difference;
                     clickedIndex = i;
                 }
             }
-            Measurement.IndexMax1D = clickedIndex;
+            MSpectraProcessor.MaxDerivativeIndex = clickedIndex;
             MTemperatureHistory.RemoveLast();
 
             // RETRIGGER ANALYSE MEASUREMENT
@@ -265,7 +265,7 @@ namespace spectrometric_thermometer
         {
             mParameters = stParameters;
             Spectrometer.UseAdaptation = stParameters.AutoExposureTime;
-            Measurement.SpectraToLoad = stParameters.Average;
+            MSpectraProcessor.SpectraToLoad = stParameters.Average;
 
             try
             {
@@ -282,18 +282,14 @@ namespace spectrometric_thermometer
                 return false;
             }
 
-            if (!MTemperatureHistory.Any())  // Is empty?
-            {
-                MTemperatureHistory.TimeZero = DateTime.Now;
-            }
-            Measurement.IndexMax1D = -1;  // Reset.
+            MSpectraProcessor.MaxDerivativeIndex = null;  // Reset.
 
 
             Front.My_msg("Parameters set & measuring");
-            if (Measurement.SpectraToLoad > 1)
+            if (MSpectraProcessor.SpectraToLoad > 1)
             {
-                float time = Spectrometer.Period * Measurement.SpectraToLoad;
-                Front.My_msg("Spectrum saved every " + time.ToString() + " s.");
+                float time = Spectrometer.Period * MSpectraProcessor.SpectraToLoad;
+                Front.My_msg(string.Format("Spectrum ready every {0} s.", time));
             }
             timerMeasure.Interval = (int)(Spectrometer.Period * 1000);
             timerMeasure.Start();
@@ -366,7 +362,7 @@ namespace spectrometric_thermometer
                     case "const_skip":
                         {
                             if (int.TryParse(items[1], out int output))
-                                Measurement.MParameters.PointsToSkip = output;
+                                MSpectraProcessor.MParameters.PointsToSkip = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -375,7 +371,7 @@ namespace spectrometric_thermometer
                     case "const_eps":
                         {
                             if (double.TryParse(items[1], out double output))
-                                Measurement.MParameters.EpsilonLimit = output;
+                                MSpectraProcessor.MParameters.EpsilonLimit = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -384,7 +380,7 @@ namespace spectrometric_thermometer
                     case "const_smooth1":
                         {
                             if (int.TryParse(items[1], out int output))
-                                Measurement.MParameters.SmoothingIntensities = output;
+                                MSpectraProcessor.MParameters.SmoothingIntensities = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -393,7 +389,7 @@ namespace spectrometric_thermometer
                     case "const_smooth2":
                         {
                             if (int.TryParse(items[1], out int output))
-                                Measurement.MParameters.SmoothingDerivatives = output;
+                                MSpectraProcessor.MParameters.SmoothingDerivatives = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -402,7 +398,7 @@ namespace spectrometric_thermometer
                     case "const_1DHalfW":
                         {
                             if (int.TryParse(items[1], out int output))
-                                Measurement.MParameters.SearchHalfWidth = output;
+                                MSpectraProcessor.MParameters.SearchHalfWidth = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -411,7 +407,7 @@ namespace spectrometric_thermometer
                     case "const_slider":
                         {
                             if (double.TryParse(items[1], out double output))
-                                Measurement.MParameters.SliderLimit = output;
+                                MSpectraProcessor.MParameters.SliderLimit = output;
                             else
                                 Front.My_msg(string.Format(
                                     "Config.cfg: Parse error: '{0}'.", output));
@@ -470,20 +466,40 @@ namespace spectrometric_thermometer
                             break;
                         }
 
-                    case "absorbtion_edge":
+                    case "inchwormMethod_left":
+                            switch (items[1])
+                            {
+                                case "old":
+                                    MSpectraProcessor.MParameters.InchwormMethodLeft = SpectraProcessor.InchwormMethod.Old;
+                                    break;
+                                case "vit":
+                                    MSpectraProcessor.MParameters.InchwormMethodLeft = SpectraProcessor.InchwormMethod.Vit;
+                                    break;
+                                case "constant":
+                                    MSpectraProcessor.MParameters.InchwormMethodLeft = SpectraProcessor.InchwormMethod.Constant;
+                                    break;
+                                default:
+                                    MSpectraProcessor.MParameters.InchwormMethodLeft = SpectraProcessor.InchwormMethod.Constant;
+                                    break;
+                            }
+                        break;
+                    case "inchwormMethod_right":
+                        switch (items[1])
                         {
-                            // Default case.
-                            if (!new[] { "Inchworm", "Inchworm_VIT", "const" }.Contains(items[1]))
-                            {
-                                Measurement.MParameters.Absorbtion_edge = "const";
+                            case "old":
+                                MSpectraProcessor.MParameters.InchwormMethodRight = SpectraProcessor.InchwormMethod.Old;
                                 break;
-                            }
-                            else
-                            {
-                                Measurement.MParameters.Absorbtion_edge = items[1];
-                            }
-                            break;
+                            case "vit":
+                                MSpectraProcessor.MParameters.InchwormMethodRight = SpectraProcessor.InchwormMethod.Vit;
+                                break;
+                            case "constant":
+                                MSpectraProcessor.MParameters.InchwormMethodRight = SpectraProcessor.InchwormMethod.Constant;
+                                break;
+                            default:
+                                MSpectraProcessor.MParameters.InchwormMethodRight = SpectraProcessor.InchwormMethod.Constant;
+                                break;
                         }
+                        break;
 
                     default:
                         Front.My_msg(string.Format("Config.cfg: KeyError: '{0}'.", items[0]));
@@ -515,26 +531,22 @@ namespace spectrometric_thermometer
         /// <returns></returns>
         public double BtnLoadSpectra(string[] fileNames)
         {
-            Measurement.SpectraToLoad = 1;  // No averaging.
+            MSpectraProcessor.SpectraToLoad = 1;  // No averaging.
 
             double temperature = -1;
-            bool save = mParameters.Save;  // Just load, no saving.
+            bool save = mParameters.Save;  // Just load, no saving. Add 'siletn' AddSpectra().
             mParameters.Save = false;
             foreach (string file in fileNames)
             {
                 DateTime modification = File.GetLastWriteTime(file);
                 var waveIntens = LoadData(file);
 
-                if (!MTemperatureHistory.Any())
-                {
-                    MTemperatureHistory.TimeZero = modification;
-                }
-                Measurement.Load(
+                MSpectraProcessor.AddSpectra(
                     wavelengths: waveIntens.Item1,
                     intensities: waveIntens.Item2,
                     ticks: modification.Ticks);
 
-                Measurement.IndexMax1D = -1;
+                MSpectraProcessor.MaxDerivativeIndex = null;
                 temperature = AnalyzeMeasurement();
             }
             mParameters.Save = save;  // Reset.
@@ -574,8 +586,8 @@ namespace spectrometric_thermometer
                     continue;
                 }
                 string[] fields = regex.Split(line);
-                column1[i] = _LoadData_parse(text: fields[0]);
-                column2[i] = _LoadData_parse(text: fields[1]);
+                column1[i] = LoadData_parse(text: fields[0]);
+                column2[i] = LoadData_parse(text: fields[1]);
             }
 
             return Tuple.Create(column1, column2);
@@ -603,7 +615,7 @@ namespace spectrometric_thermometer
                 Front.My_msg("DAC not found.");
                 return false;
             }
-            if (!MTemperatureHistory.Any())
+            if (MTemperatureHistory.IsEmpty)
             {
                 Front.My_msg("No initial temperature! Setting DAC voltage only.");
 
@@ -612,7 +624,7 @@ namespace spectrometric_thermometer
                 return false;
             }
             // Initial temperature.
-            PID.Reset(MTemperatureHistory.TemperaturesLast);
+            PID.Reset(MTemperatureHistory.Temperatures.Last());
             // Try it now first (set initV).
             TimerPID_Tick(this, EventArgs.Empty);
             timerPID.Start();
@@ -626,7 +638,7 @@ namespace spectrometric_thermometer
 
         public void SelectCalibration(int SelectedIndex)
         {
-            Measurement.Calibration = Calibrations[SelectedIndex];
+            MSpectraProcessor.Calibration = Calibrations[SelectedIndex];
         }
 
         /// <summary>
@@ -707,7 +719,7 @@ namespace spectrometric_thermometer
         /// <exception cref="FileLoadException">Wrong file data format.</exception>
         /// <param name="text">Text to parse.</param>
         /// <returns>Parsed.</returns>
-        private static double _LoadData_parse(string text)
+        private static double LoadData_parse(string text)
         {
             if (double.TryParse(text, out double result))
             {
@@ -796,15 +808,15 @@ namespace spectrometric_thermometer
                 Front.FilenameIndex = fileNameIndexText;
                 WriteColumns(
                     filename: mParameters.Filename + fileNameIndexText + ".dat",
-                    col1: Measurement.Wavelengths,
-                    col2: Measurement.Intensities);
+                    col1: MSpectraProcessor.Wavelengths,
+                    col2: MSpectraProcessor.Intensities);
             }
             if (e.MultipleSpectraLoaded)
             {
                 Front.LabelBoldAverage(true);
             }
             Front.PlotRightTitleTemperature = AnalyzeMeasurement();
-            Front.Plot(Measurement, MTemperatureHistory);
+            Front.Plot(MSpectraProcessor, MTemperatureHistory);
         }
 
         /// <summary>
@@ -814,7 +826,7 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void Spectrometer_ExposureFinished(object sender, Spectrometer.ExposureFinishedEventArgs e)
         {
-            Measurement.Load(
+            MSpectraProcessor.AddSpectra(
                 wavelengths: Spectrometer.Wavelengths,
                 intensities: Array.ConvertAll(Spectrometer.Intensities, v => (double)v),
                 ticks: Spectrometer.Time.Ticks);
@@ -836,11 +848,11 @@ namespace spectrometric_thermometer
         {
 
             var VNewAndInfo = PID.Process(
-                time: MTemperatureHistory.TimesLast,
-                temperature: MTemperatureHistory.TemperaturesLast,
+                time: MTemperatureHistory.Times.Last(),
+                temperature: MTemperatureHistory.Temperatures.Last(),
                 vOld: DAC.LastWrittenValue);
 
-            DAC.SetV(MTemperatureHistory.TemperaturesLast / 100, 1, save: false);
+            DAC.SetV(MTemperatureHistory.Temperatures.Last() / 100, 1, save: false);
             DAC.SetV(VNewAndInfo.Item1, 2);
 
             Front.PidVoltage = string.Format("{0:#.00}", DAC.LastWrittenValue);

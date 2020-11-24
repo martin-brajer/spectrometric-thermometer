@@ -21,12 +21,13 @@ namespace spectrometric_thermometer
                 SmoothingDerivatives = 10;
                 SearchHalfWidth = 20;
                 SliderLimit = 0;
-                Absorbtion_edge = "const";
+                InchwormMethodLeft = InchwormMethod.Old;
+                InchwormMethodRight = InchwormMethod.Constant;
             }
             
             public Parameters(int pointsToSkip, double epsilonLimit, int smoothingIntensities,
                 int smoothingDerivatives, int searchHalfWidth, double sliderLimit,
-                string absorbtion_edge)
+                InchwormMethod inchwormMethodLeft, InchwormMethod inchwormMethodRight)
             {
                 PointsToSkip = pointsToSkip;
                 EpsilonLimit = epsilonLimit;
@@ -34,7 +35,8 @@ namespace spectrometric_thermometer
                 SmoothingDerivatives = smoothingDerivatives;
                 SearchHalfWidth = searchHalfWidth;
                 SliderLimit = sliderLimit;
-                Absorbtion_edge = absorbtion_edge ?? throw new ArgumentNullException(nameof(absorbtion_edge));
+                InchwormMethodLeft = inchwormMethodLeft;
+                InchwormMethodRight = inchwormMethodRight;
             }
 
             /// <summary>
@@ -62,9 +64,13 @@ namespace spectrometric_thermometer
             /// </summary>
             public double SliderLimit { get; set; }
             /// <summary>
-            /// Which method to use in search for the two lines.
+            /// Which method to use in search for the left line.
             /// </summary>
-            public string Absorbtion_edge { get; set; }
+            public InchwormMethod InchwormMethodLeft { get; set; }
+            /// <summary>
+            /// Which method to use in search for the right line.
+            /// </summary>
+            public InchwormMethod InchwormMethodRight { get; set; }
         }
     }
 }

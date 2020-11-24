@@ -62,7 +62,7 @@ namespace spectrometric_thermometer
             /// <summary>
             /// Represents a <see cref="FitGraphics"/> not meant to be plotted.
             /// </summary>
-            public FitGraphics Empty => new FitGraphics();
+            public static FitGraphics Empty => new FitGraphics();
 
             /// <summary>
             /// Empty <see cref="FitGraphics"/> should not be plotted.

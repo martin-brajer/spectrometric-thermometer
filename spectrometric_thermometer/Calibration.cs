@@ -14,7 +14,7 @@ namespace spectrometric_thermometer
         /// </summary>
         /// <param name="wavelength">Input wavelength.</param>
         /// <returns>Temperature.</returns>
-        double Use(double wavelength);
+        double? Use(double? wavelength);
     }
 
     /// <summary>
@@ -60,9 +60,9 @@ namespace spectrometric_thermometer
         /// </summary>
         /// <param name="wavelength">Input.</param>
         /// <returns>Temperature.</returns>
-        public double Use(double wavelength)
+        public double? Use(double? wavelength)
         {
-            return interpolation.Interpolate(wavelength);
+            return wavelength == null ? null : (double?)interpolation.Interpolate((double)wavelength);
         }
     }
 
@@ -89,9 +89,9 @@ namespace spectrometric_thermometer
         /// </summary>
         /// <param name="wavelength">Input wavelength.</param>
         /// <returns>Temperature.</returns>
-        public double Use(double wavelength)
+        public double? Use(double? wavelength)
         {
-            return polynom.Evaluate(wavelength);
+            return wavelength == null ? null : (double?)polynom.Evaluate((double)wavelength);
         }
     }
 }

@@ -104,7 +104,7 @@ class Line():
         return "Line: y = ax + b, where a = {}, b = {}.".format(self.slope, self.constant)
 
     @staticmethod
-    def XIntersection(line1, line2):
+    def _XIntersection(line1, line2):
         """ Return x-coordinate of intersection point of the two Lines. """
         return (line1.constant - line2.constant) / \
             (line2.slope - line1.slope)
@@ -112,7 +112,7 @@ class Line():
     @staticmethod
     def Intersection(line1, line2):
         """ Return Tuple(x, y) of coordinates of intersection point of the two Lines. """
-        x = Line.XIntersection(line1, line2)
+        x = Line._XIntersection(line1, line2)
         return (x, line1(x))
 
 

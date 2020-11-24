@@ -326,7 +326,8 @@ namespace spectrometric_thermometer
             string xLabel = null, string yLabel = null)
         {
             if (plotLeft == null) { return; }
-
+            if (x.Length != y.Length) { return; }
+            
             plotLeft.XLabel(xLabel ?? constants.PlotLeft_XLabel);
             plotLeft.YLabel(yLabel ?? constants.PlotLeft_YLabel);
             plotLeft.AxisAuto(horizontalMargin: .9, verticalMargin: .5);
@@ -487,7 +488,7 @@ namespace spectrometric_thermometer
                 {
                     // Plot last loaded.
                     PlotRightTitleTemperature = spectrometricThermometer.BtnLoadSpectra(openFileDialog.FileNames);
-                    Plot(spectrometricThermometer.Measurement, spectrometricThermometer.MTemperatureHistory);
+                    Plot(spectrometricThermometer.MSpectraProcessor, spectrometricThermometer.MTemperatureHistory);
                 }
             }
         }
@@ -503,7 +504,11 @@ namespace spectrometric_thermometer
             double[] y = new double[x.Length];
             for (int i = 0; i < x.Length; i++)
             {
-                y[i] = spectrometricThermometer.Measurement.Calibration.Use(x[i]);
+                double? temperature = spectrometricThermometer.MSpectraProcessor.Calibration.Use(x[i]);
+                if (temperature != null)
+                {
+                    y[i] = (double)temperature;
+                }
             }
             PlotRight(x, y, xLabel: "Temperature (°C)", yLabel: "Calibration");
         }
@@ -660,10 +665,10 @@ namespace spectrometric_thermometer
             if (ModifierKeys.HasFlag(Keys.Control))
             {
                 // If clicked at app start.
-                if (spectrometricThermometer.Measurement.Wavelengths == null) { return; }
+                if (spectrometricThermometer.MSpectraProcessor.Wavelengths == null) { return; }
 
                 PlotRightTitleTemperature = spectrometricThermometer.AnalyzeMeasurement(clickedWavelength);
-                Plot(spectrometricThermometer.Measurement, spectrometricThermometer.MTemperatureHistory);
+                Plot(spectrometricThermometer.MSpectraProcessor, spectrometricThermometer.MTemperatureHistory);
             }
             else
             {

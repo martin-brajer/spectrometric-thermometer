@@ -31,6 +31,7 @@ namespace spectrometric_thermometer
         public double[] Wavelengths { get; private set; } = null;
         public double[] Intensities { get; private set; } = null;
         public DateTime Time { get; private set; }
+        public double? AbsorptionEdge { get; private set; } = null;
         public double? Temperature { get; private set; } = null;
         /// <summary>
         /// Data for plotting fitting graphics.
@@ -38,7 +39,7 @@ namespace spectrometric_thermometer
         public FitGraphics MFitGraphics { get; private set; }
 
         /// <summary>
-        /// Enough (<see cref="SpectraToLoad"/>) data gathered, then analysed.
+        /// Enough (<see cref="SpectraToLoad"/>) spectra gathered, then analysed.
         /// </summary>
         public event EventHandler<DataReadyEventArgs> DataReady;
 
@@ -51,11 +52,9 @@ namespace spectrometric_thermometer
         /// </summary>
         public Parameters MParameters { get; set; } = new Parameters();
         /// <summary>
-        /// Index at which max 1st derivative was found.
-        /// Value (-1) means no search has been done yet.
-        /// Reset in BtnMeas_Click() and BtnLoad_Click().
+        /// Index at which 1st derivative maximum was found. Nullable.
         /// </summary>
-        public int IndexMax1D { get; set; } = -1;
+        public int? MaxDerivativeIndex { get; set; } = null;
         /// <summary>
         /// Number of spectra used in averaging.
         /// Setter also resets number of loaded spectra.
@@ -79,6 +78,25 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
+        /// Add new spectrum.
+        /// </summary>
+        /// <param name="wavelengths"></param>
+        /// <param name="intensities"></param>
+        /// <param name="ticks">DataTime.ticks.</param>
+        public void AddSpectra(double[] wavelengths, double[] intensities, long ticks)
+        {
+            if (SpectraLoaded == 0)
+            {
+                Wavelengths = wavelengths;
+                intensitiesBuffer = new double[Wavelengths.Length];  // Defaults to zeros.
+                timeBufferTicks = 0;
+            }
+            intensitiesBuffer = intensitiesBuffer.Zip(intensities, (x, y) => x + y).ToArray();
+            timeBufferTicks += ticks;
+            SpectraLoaded++;
+        }
+
+        /// <summary>
         /// Event invoking method on finished exposure.
         /// If allowed, run <see cref="ExposureTimeAdaptation"/>
         /// and send info through <see cref="EventArgs"/>.
@@ -88,195 +106,211 @@ namespace spectrometric_thermometer
         protected virtual void OnDataReady()
         {
             intensitiesBuffer = SmoothPointPeaks(intensitiesBuffer);
-            if (SpectraLoaded > 1)
-            {
-                Intensities = intensitiesBuffer.Select(r => r / SpectraLoaded).ToArray();
-            }
-            else
-            {
-                Intensities = intensitiesBuffer;
-            }
+            intensitiesBuffer = SmoothBoxcar(intensitiesBuffer,
+                windowHalf: MParameters.SmoothingIntensities);
+
+            Intensities = SpectraLoaded == 1 ? intensitiesBuffer :
+                intensitiesBuffer.Select(item => item / SpectraLoaded).ToArray();
             Time = new DateTime(timeBufferTicks / SpectraLoaded);
+            AbsorptionEdge = FindAbsorptionEdge();
+            Temperature = Calibration?.Use(wavelength: AbsorptionEdge);
 
             SpectraLoaded = 0;  // Reset.
-            Temperature = Analyze();
-            DataReady?.Invoke(this, new DataReadyEventArgs(
-                multipleSpectraLoaded: SpectraToLoad > 1,
-                temperature: (double)Temperature));
-        }
-
-        /// <summary>
-        /// Find absorbtion edge and convert its value to temperature.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">No calibration found.</exception>
-        /// <returns>Temperature.</returns>
-        public double Analyze()
-        {
-            // No calibration, no fun (temperature history).
-            if (Calibration == null)
-                throw new InvalidOperationException("No calibration found.");
-
-            // Find the edge.
-            double absEdge = FindAbsorptionEdge();
-
-            if (double.IsNegativeInfinity(absEdge))
-                throw new InvalidOperationException("Absorption edge not found");
-
-            // Temperature calibration.
-            return Calibration.Use(wavelength: absEdge);
-        }
-
-        /// <summary>
-        /// Set up new averaging (and nulls fitGraphics).
-        /// Or add new data.
-        /// </summary>
-        /// <param name="wavelengths"></param>
-        /// <param name="intensities"></param>
-        /// <param name="ticks">DataTime.ticks.</param>
-        /// <param name="onlyOne">Load data only once. Instead of setting spectraToLoad to one.</param>
-        /// <returns>Is it the first package to load?</returns>
-        public void Load(double[] wavelengths, double[] intensities, long ticks, bool onlyOne = false)
-        {
-            // Initialize new data.
-            if (SpectraLoaded == 0 || onlyOne)
-            {
-                Wavelengths = wavelengths;
-                intensitiesBuffer = intensities;
-                timeBufferTicks = ticks;
-
-                SpectraLoaded = 1;
-            }
-            // Add new data to already set up object.
-            else
-            {
-                intensitiesBuffer = intensitiesBuffer.Zip(intensities, (x, y) => x + y).ToArray();
-                timeBufferTicks += ticks;
-
-                SpectraLoaded++;
-            }
+            DataReady?.Invoke(this, new DataReadyEventArgs(multipleSpectraLoaded: SpectraLoaded > 1));
         }
 
         /// <summary>
         /// Find absorption edge.
-        /// Return double.NegativeInfinity if not found.
         /// </summary>
-        /// <returns>Absorption edge wavelength.</returns>
-        private double FindAbsorptionEdge()
+        /// <returns>Absorption edge wavelength. Null on failure.</returns>
+        private double? FindAbsorptionEdge()
         {
-            double absorptionEdge = double.NegativeInfinity;
-
-            // Interpolation on smoothed intensities.
-            var interpolation = MathNet.Numerics.Interpolate.CubicSpline(
-                Wavelengths,
-                SmoothBoxcar(Intensities, windowHalf: MParameters.SmoothingIntensities));
-            // Max in smoothed first derivative.
+            // Find index of maximum of smoothed first derivative => MaxDerivativeIndex.
             double[] derivative = new double[Wavelengths.Length];
+            var interpolation = MathNet.Numerics.Interpolate.CubicSpline(Wavelengths, Intensities);
             for (int i = 0; i < Wavelengths.Length; i++)
             {
-                derivative[i] = interpolation.Differentiate(
-                    Wavelengths[i]);
+                derivative[i] = interpolation.Differentiate(Wavelengths[i]);
             }
             derivative = SmoothBoxcar(derivative, windowHalf: MParameters.SmoothingDerivatives);
             {
-                if (IndexMax1D == -1)  // First time => search whole vector.
+                double[] shortDerivative = derivative;
+                int startIndex = 0;
+                // Derivative maximum was found last time => search around that wavelength.
+                if (MaxDerivativeIndex != null)
                 {
-                    IndexMax1D = derivative.ToList().IndexOf(derivative.Max());
-                }
-                else  // Next time in shortened version. Still must be inside the whole one.
-                {
-                    int startIndex = IndexMax1D - MParameters.SearchHalfWidth;  // Start.
+                    startIndex = (int)MaxDerivativeIndex - MParameters.SearchHalfWidth;
                     if (startIndex < 0)
+                    {
                         startIndex = 0;
-
-                    int len = (2 * MParameters.SearchHalfWidth) + 1;
-                    if (len + startIndex > Wavelengths.Length)
-                        len = Wavelengths.Length - startIndex;
-
-                    double[] shortDerivative = new double[len];
-                    Array.Copy(derivative, startIndex, shortDerivative, 0, len);
-
-                    IndexMax1D = shortDerivative.ToList().IndexOf(shortDerivative.Max()) + startIndex;
+                    }
+                    int lenght = (2 * MParameters.SearchHalfWidth) + 1;
+                    if (lenght + startIndex > Wavelengths.Length)
+                    {
+                        lenght = Wavelengths.Length - startIndex;
+                    }
+                    shortDerivative = new double[lenght];
+                    Array.Copy(derivative, startIndex, shortDerivative, 0, lenght);
                 }
+                MaxDerivativeIndex = Array.IndexOf(shortDerivative, shortDerivative.Max()) + startIndex;
             }
+
             // Inchworm around max of 1st derivative.
-            int iLeft = IndexMax1D;
-            int iRight = IndexMax1D;
-            Inchworm(ref iLeft, ref iRight, direction: true);
-            double[] poptRight = Inchworm(ref iLeft, ref iRight, direction: false);
+            int iLeft = (int)MaxDerivativeIndex;
+            int iRight = (int)MaxDerivativeIndex;
+            Inchworm(ref iLeft, ref iRight, goLeft: true, method: MParameters.InchwormMethodRight);
+            double[] poptRight = Inchworm(ref iLeft, ref iRight, goLeft: false, method: MParameters.InchwormMethodRight);
+
             // Slide left as long as line or saddle is found.
-            // Skip a few points between the two lines.
-            int slider = iLeft - MParameters.PointsToSkip;
-            if (slider < 0)  // Skip only if possible.
-                slider = 0;
-            double derivMinimum = derivative[slider];
+            int slider = iLeft - MParameters.PointsToSkip;  // Skip a few points between the two lines.
+            slider = slider < 0 ? 0 : slider;  // Skip only if possible.
+
+            double derivativeMinimum = derivative[slider];
             while (
                 slider > 0 &&  // No OutOfRange.
                                // Search for line. Puls forgiving slider constant.
-                derivative[slider] <= derivMinimum + MParameters.SliderLimit &&
+                derivative[slider] <= derivativeMinimum + MParameters.SliderLimit &&
                 derivative[slider] >= 0)  // Search for saddle.
             {
-                if (derivative[slider] <= derivMinimum)
-                    derivMinimum = derivative[slider];
+                if (derivative[slider] <= derivativeMinimum)
+                {
+                    derivativeMinimum = derivative[slider];
+                }
                 slider--;
             }
-            // Inchworm around the second point.
+            
+            // Inchworm around the slider point.
             int iLeft2 = slider;
             int iRight2 = slider;
-            double[] poptLeft = null;
-            switch (MParameters.Absorbtion_edge)
+            Inchworm(ref iLeft2, ref iRight2, goLeft: false, method: MParameters.InchwormMethodLeft);
+            double[] poptLeft = Inchworm(ref iLeft2, ref iRight2, goLeft: true, method: MParameters.InchwormMethodLeft);
+
+            // Setting up FitGraphics.
+            if (poptRight == null || poptLeft == null)
             {
-                case "Inchworm":
-                    {
-                        Inchworm(ref iLeft2, ref iRight2, direction: false);
-                        poptLeft = Inchworm(ref iLeft2, ref iRight2, direction: true);
-                        break;
-                    }
-
-                case "Inchworm_VIT":
-                    {
-                        Inchworm_VIT(ref iLeft2, ref iRight2, direction: false);
-                        poptLeft = Inchworm_VIT(ref iLeft2, ref iRight2, direction: true);
-                        break;
-                    }
-
-                case "const":
-                    {
-                        poptLeft = new double[2] { Intensities[slider], 0 };
-                        //popt2 = new double[2] { interpolation.Interpolate(slider), 0 };
-                        break;
-                    }
-
-                default:
-                    break;
-            }
-            // Setting up the fitting graphics. See documentation.
-            if (poptRight != null && poptLeft != null)
-            {
-                Func<double, double[], double> line = MathNet.Numerics.Polynomial.Evaluate;
-                double lineInverseRight(double y) => (y - poptRight[0]) / poptRight[1];
-                double intensitiesMax = Intensities.Max();
-
-                double W_Min = Wavelengths[0];
-                double W_IMax = Wavelengths[Array.IndexOf(Intensities, intensitiesMax)];
-                //double W_IMax = Wavelengths[Intensities.ToList().IndexOf(intensitiesMax)];
-                // W: LeftLine(W) == RightLine(W)
-                absorptionEdge = (poptLeft[0] - poptRight[0]) / (poptRight[1] - poptLeft[1]);
-
-                MFitGraphics = new FitGraphics(
-                    leftLineXs: new[] { W_Min, W_IMax },
-                    leftLineYs: new[] { line(W_Min, poptLeft), line(W_IMax, poptLeft) },
-                    rightLineXs: new[] { lineInverseRight(0), lineInverseRight(intensitiesMax) },
-                    rightLineYs: new[] { 0, intensitiesMax },
-                    intersection: new PointF((float)absorptionEdge, (float)line(absorptionEdge, poptRight)),
-                    markedLeft: Tuple.Create(iLeft, iRight - iLeft + 1),
-                    markedRight: Tuple.Create(iLeft2, iRight2 - iLeft2 + 1));
+                MaxDerivativeIndex = null;  // Fail => next time search again the whole vector.
+                return null;
             }
             else
             {
-                // Next time search again the whole vector.
-                IndexMax1D = -1;
+                double lineLeft(double x) => MathNet.Numerics.Polynomial.Evaluate(x, poptLeft);
+                double lineRight(double x) => MathNet.Numerics.Polynomial.Evaluate(x, poptRight);
+                double lineRightInverse(double y) => (y - poptRight[0]) / poptRight[1];
+                
+                double intensitiesMax = Intensities.Max();
+                double WMin = Wavelengths[0];
+                double WIMax = Wavelengths[Array.IndexOf(Intensities, intensitiesMax)];
+                // W: LeftLine(W) == RightLine(W)
+                double absorptionEdge = (poptLeft[0] - poptRight[0]) / (poptRight[1] - poptLeft[1]);
+
+                MFitGraphics = new FitGraphics(
+                    leftLineXs: new[] { WMin, WIMax },
+                    leftLineYs: new[] { lineLeft(WMin), lineLeft(WIMax) },
+                    rightLineXs: new[] { lineRightInverse(0), lineRightInverse(intensitiesMax) },
+                    rightLineYs: new[] { 0, intensitiesMax },
+                    intersection: new PointF((float)absorptionEdge, (float)lineRight(absorptionEdge)),
+                    markedLeft: Tuple.Create(iLeft, iRight - iLeft + 1),
+                    markedRight: Tuple.Create(iLeft2, iRight2 - iLeft2 + 1));
+                return absorptionEdge;
             }
-            return absorptionEdge;
+        }
+
+        /// <summary>
+        /// Fit a line at as wide interval as possible.
+        /// Continue as long as the fit is "good".
+        /// </summary>
+        /// <exception cref="ArgumentException">iLeft must not be greater than iRight!</exception>
+        /// <param name="iLeft">Left-end index.</param>
+        /// <param name="iRight">Right-end index.</param>
+        /// <param name="goLeft">Widening of the interval direction. True means left.</param>
+        /// <returns>Fitting parameters.
+        /// The first one is constant, the second is slope.</returns>
+        private double[] Inchworm(ref int iLeft, ref int iRight, bool goLeft, InchwormMethod method)
+        {
+            if (iLeft > iRight)
+            {
+                throw new ArgumentException("iLeft must not be greater than iRight!");
+            }
+            if (iLeft == iRight)  // Len is 1 point. Add one in proper direction.
+            {
+                if (iLeft == 0)  // Left end.
+                {
+                    iRight++;
+                }
+                else if (iRight == Wavelengths.Length - 1)  // Right end.
+                {
+                    iLeft--;
+                }
+                else  // In between.
+                {
+                    if (goLeft)
+                    {
+                        iLeft--;
+                    }
+                    else
+                    {
+                        iRight++;
+                    }
+                }
+            }  // Now we have at least 2 points. 3rd is added
+
+            switch (method)
+            {
+                case InchwormMethod.Old:
+                    return InchwormOld(ref iLeft, ref iRight, goLeft: goLeft);
+
+                case InchwormMethod.Vit:
+                    return InchwormVit(ref iLeft, ref iRight, goLeft: goLeft);
+
+                case InchwormMethod.Constant:
+                    return new double[2] { Intensities[iLeft], 0 };
+
+                default:
+                    throw new ArgumentException();
+            }
+        }
+
+        private double[] InchwormOld(ref int iLeft, ref int iRight, bool goLeft)
+        {
+            int iLeftLoc = iLeft;
+            int iRightLoc = iRight;
+
+            double rSquaredLast = 0d;
+            double rSquaredMin = double.MaxValue / 2;
+
+            while (rSquaredLast < (rSquaredMin + MParameters.EpsilonLimit))
+            {
+                if (goLeft)  // Widen the interval (if possible).
+                {
+                    if (iLeftLoc - 1 < 0) { break; }
+                    iLeftLoc--;
+                }
+                else
+                {
+                    if (iRightLoc + 1 > Wavelengths.Length - 1) { break; }
+                    iRightLoc++;
+                }
+
+                FitData fit = LineFitBetween(iLeftLoc, iRightLoc);
+                //rSquaredLast = fit.rSquared;
+                rSquaredLast = Math.Log(1 - fit.rSquared);
+                if (rSquaredLast < rSquaredMin)
+                {
+                    rSquaredMin = rSquaredLast;
+                    iLeft = iLeftLoc;
+                    iRight = iRightLoc;
+                }
+            }
+            // Drop the last point.
+            // Was the loop ever executed? (iLeft==0 || iRight==Wavelengths.Length-1)
+            if (iLeft < iRight)
+            {
+                return LineFitBetween(iLeft, iRight).popt;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -286,15 +320,15 @@ namespace spectrometric_thermometer
         /// 
         /// Vit's variation.
         /// </summary>
-        /// <param name="iLeft">Left-side index.</param>
-        /// <param name="iRight">Right-side index.</param>
-        /// <param name="direction">True means left.</param>
+        /// <param name="iLeft">Left-end index.</param>
+        /// <param name="iRight">Right-end index.</param>
+        /// <param name="goLeft">Widening of the interval direction. True means left.</param>
         /// <returns>Fitting parameters.
         /// The first one is intercept, the second is slope.</returns>
-        private double[] Inchworm_VIT(ref int iLeft, ref int iRight, bool direction)
+        private double[] InchwormVit(ref int iLeft, ref int iRight, bool goLeft)
         {
             // Make three points out of one, when iLeft = iRight.
-            if (direction)
+            if (goLeft)
                 iLeft--;
             else
                 iRight++;
@@ -308,7 +342,7 @@ namespace spectrometric_thermometer
             while (eps < epsMax && iLeft > 0 && iRight < Wavelengths.Length)
             {
                 int index;
-                if (direction)
+                if (goLeft)
                 {
                     iLeft--;
                     index = iLeft;
@@ -345,7 +379,7 @@ namespace spectrometric_thermometer
             // Drop the last point.
             if (len > 0)  // Was the loop ever executed?
             {
-                if (direction)
+                if (goLeft)
                     iLeft++;
                 else
                     iRight--;
@@ -358,115 +392,27 @@ namespace spectrometric_thermometer
         }
 
         /// <summary>
-        /// Widens inteval given in parametrss by fitting a line there.
-        /// Continue as long as the fit is "good".
+        /// Fit subarray by line and find R^2.
         /// </summary>
-        /// <exception cref="ArgumentException">iLeft must not be greater than iRight!</exception>
-        /// <param name="iLeft">Left-side index.</param>
-        /// <param name="iRight">Right-side index.</param>
-        /// <param name="direction">True means left.</param>
-        /// <returns>Fitting parameters.
-        /// The first one is intercept, the second is slope.</returns>
-        private double[] Inchworm(ref int iLeft, ref int iRight, bool direction)
-        {
-            if (iLeft > iRight)
-            {
-                throw new ArgumentException("iLeft must not be greater than iRight!");
-            }
-            // Len is less than 2 points.
-            if (iRight == iLeft)
-            {
-                if (iLeft == 0)
-                {
-                    iRight++;
-                }
-                else if (iRight == Wavelengths.Length - 1)
-                {
-                    iLeft--;
-                }
-                else
-                {
-                    if (direction)
-                        iLeft--;
-                    else
-                        iRight++;
-                }
-            }
-
-            // Locals.
-            int iLeftLoc = iLeft;
-            int iRightLoc = iRight;
-
-            double rSquareLast = 0d;
-            double rSquareMin = double.MaxValue;
-
-            FitData fit;
-
-            while (rSquareLast < (rSquareMin + MParameters.EpsilonLimit))
-            {
-                if (direction)
-                {
-                    if (iLeftLoc - 1 < 0) break;
-                    iLeftLoc--;
-                }
-                else
-                {
-                    if (iRightLoc + 1 >= Wavelengths.Length) break;
-                    iRightLoc++;
-                }
-
-                fit = InchwormFit(iLeftLoc, iRightLoc);
-
-                rSquareLast = Math.Log(1 - fit.rSquared);
-
-                if (rSquareLast < rSquareMin)
-                {
-                    rSquareMin = rSquareLast;
-                    iLeft = iLeftLoc;
-                    iRight = iRightLoc;
-                }
-            }
-
-            // Drop the last point.
-            if (iLeft < iRight)  // Was the loop ever executed?
-            {
-                return InchwormFit(iLeft, iRight).popt;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Fit subarray of Wavelengths by line.
-        /// </summary>
-        /// <param name="iLeft"></param>
-        /// <param name="iRight"></param>
+        /// <param name="iLeft">Start index.</param>
+        /// <param name="iRight">End index (included).</param>
         /// <returns>Fit parameters and RSquared.</returns>
-        private FitData InchwormFit(int iLeft, int iRight)
+        private FitData LineFitBetween(int iLeft, int iRight)
         {
-            int length = iRight - iLeft + 1;  // Start with three points.
-            // Fit line a subarray.
-            // Subarrays, where fittting takes place.
-            double[] xx = new double[length];  // Copy out.
-            double[] yy = new double[length];  // Copy out.
-            Array.Copy(Wavelengths, iLeft, xx, 0, length);
-            Array.Copy(Intensities, iLeft, yy, 0, length);
-            var popt = MathNet.Numerics.Fit.Line(xx, yy);
-
-            // Tuple<double, double> to  double[2].
-            var _popt = new double[] { popt.Item1, popt.Item2 };
-
+            // Trim data.
+            int length = iRight - iLeft + 1;  // Start with three points. "iRight" included.
+            double[] wavelengths = new double[length];  // Copy out.
+            double[] intensities = new double[length];  // Copy out.
+            Array.Copy(this.Wavelengths, iLeft, wavelengths, 0, length);
+            Array.Copy(this.Intensities, iLeft, intensities, 0, length);
+            // Fit.
+            var popt = MathNet.Numerics.Fit.Polynomial(wavelengths, intensities, 1);
             // Goodness of fit.
-            double[] yFit = new double[length];
-            for (int i = 0; i < length; i++)
-            {
-                yFit[i] = MathNet.Numerics.Polynomial.Evaluate(z: Wavelengths[i + iLeft], coefficients: _popt);
-            }
-            var _rSquared = MathNet.Numerics.GoodnessOfFit.RSquared(yFit, yy);
-
-            return new FitData() { popt = _popt, rSquared = _rSquared };
+            double[] modelledValues = wavelengths.Select(
+                x => MathNet.Numerics.Polynomial.Evaluate(x, popt)).ToArray();
+            double rSquared = MathNet.Numerics.GoodnessOfFit.CoefficientOfDetermination(modelledValues, intensities);
+            
+            return new FitData() { popt = popt, rSquared = rSquared };
         }
 
         /// <summary>
@@ -483,8 +429,9 @@ namespace spectrometric_thermometer
             int length = input.Length;
             double[] output = new double[length];
 
-            for (int i = 0; i < length; i++)  // Box shifting.
+            for (int i = 0; i < length; i++)  // Box position.
             {
+                // Trim overshoots. Find box's left and right half-widths.
                 int left = i - windowHalf < 0 ? i : windowHalf;
                 int right = i + windowHalf > length ? length - i : windowHalf;
 
@@ -518,6 +465,22 @@ namespace spectrometric_thermometer
             return input;
         }
 
+        public enum InchwormMethod
+        {
+            /// <summary>
+            /// 
+            /// </summary>
+            Old,
+            /// <summary>
+            /// 
+            /// </summary>
+            Vit,
+            /// <summary>
+            /// Horizontal line at "first point" intensity.
+            /// </summary>
+            Constant,
+        }
+
         /// <summary>
         /// Data structure for fitting results.
         /// </summary>
@@ -538,13 +501,11 @@ namespace spectrometric_thermometer
         /// </summary>
         public class DataReadyEventArgs : EventArgs
         {
-            public DataReadyEventArgs(bool multipleSpectraLoaded, double temperature)
+            public DataReadyEventArgs(bool multipleSpectraLoaded)
             {
                 MultipleSpectraLoaded = multipleSpectraLoaded;
-                Temperature = temperature;
             }
             public bool MultipleSpectraLoaded { get; private set; }
-            public double Temperature { get; private set; }
         }
     }
 }

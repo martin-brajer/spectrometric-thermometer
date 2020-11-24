@@ -10,51 +10,47 @@ namespace spectrometric_thermometer
         {
             double[] Temperatures { get; }
             double[] Times { get; }
-            DateTime TimeZero { get; }
         }
 
         public class TemperatureHistory : ITemperatureHistory
         {
-            private readonly List<double> _temperatures;
-            private readonly List<double> _times;
-            private int length;
-
-            public double TemperaturesLast => _temperatures.Last();
-            public double TimesLast => _times.Last();
-
-            public double[] Temperatures => _temperatures.ToArray();
-            public double[] Times => _times.ToArray();
+            private readonly List<double> temperatures;
             /// <summary>
             /// Time of the first measurement (press of the Measure button).
-            /// From this time, seconds are counted.
+            /// <see cref="times"/> are counted relative to this time.
             /// </summary>
-            public DateTime TimeZero { get; set; }
+            private DateTime timeZero;
+            /// <summary>
+            /// In seconds.
+            /// </summary>
+            private readonly List<double> times;
+            private int length;
 
-            public TemperatureHistory()
-            {
-                _temperatures = new List<double>();
-                _times = new List<double>();
-                TimeZero = DateTime.Now;
-                length = 0;
-            }
+            public double[] Temperatures => temperatures.ToArray();
+            public double[] Times => times.ToArray();
 
             /// <summary>
             /// Determines whether this history contains any elements.
             /// </summary>
             /// <returns></returns>
-            public bool Any()
+            public bool IsEmpty => length == 0;
+
+            public TemperatureHistory()
             {
-                return length > 0;
-                //return _temperatures.Any() || _times.Any();
+                temperatures = new List<double>();
+                times = new List<double>();
+                timeZero = DateTime.Now;
+                length = 0;
             }
 
             public void Add(double temperature, DateTime time)
             {
-                _temperatures.Add(temperature);
-
-                double totalSeconds = time.Subtract(TimeZero).TotalSeconds;
-                _times.Add(totalSeconds);
-
+                temperatures.Add(temperature);
+                if (IsEmpty)
+                {
+                    timeZero = time;
+                }
+                times.Add(time.Subtract(timeZero).TotalSeconds);
                 length++;
             }
 
@@ -65,17 +61,16 @@ namespace spectrometric_thermometer
             {
                 if (length > 0)
                 {
-                    _temperatures.RemoveAt(length - 1);
-                    _times.RemoveAt(length - 1);
+                    temperatures.RemoveAt(length - 1);
+                    times.RemoveAt(length - 1);
                     length--;
                 }
             }
 
             public void Clear()
             {
-                _temperatures.Clear();
-                _times.Clear();
-                TimeZero = DateTime.Now;
+                temperatures.Clear();
+                times.Clear();
                 length = 0;
             }
         }
