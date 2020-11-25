@@ -160,8 +160,9 @@ namespace spectrometric_thermometer
                     clickedIndex = i;
                 }
             }
-            MSpectraProcessor.MaxDerivativeIndex = clickedIndex;
             MTemperatureHistory.RemoveLast();
+            MSpectraProcessor.MaxDerivativeIndex = clickedIndex;
+            MSpectraProcessor.OnDataReady(reanalyze: true);
 
             // RETRIGGER ANALYSE MEASUREMENT
 

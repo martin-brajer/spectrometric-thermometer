@@ -18,6 +18,11 @@ namespace spectrometric_thermometer
         private ScottPlot.Plot plotLeft;
         public ScottPlot.Plot plotRight;
         /// <summary>
+        /// 
+        /// </summary>
+        private bool plotLeftMouseDataControl = false;
+
+        /// <summary>
         /// Connecting device phase.
         /// </summary>
         private InitializationState initializationState = InitializationState.Initial;
@@ -51,6 +56,7 @@ namespace spectrometric_thermometer
                 plotRight.Title(string.Format("T = {0:0.0} °C", value));
             }
         }
+
 
         /// <summary>
         /// Connecting device phase.
@@ -139,6 +145,7 @@ namespace spectrometric_thermometer
 
             BtnDefaultSize_Click(this, EventArgs.Empty);
             this.CenterToScreen();
+            formsPlotLeft.Configure(enablePanning: plotLeftMouseDataControl);
         }
 
         private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
@@ -463,6 +470,13 @@ namespace spectrometric_thermometer
             }
         }
 
+
+        private void ChkBoxPlotControl_CheckedChanged(object sender, EventArgs e)
+        {
+            plotLeftMouseDataControl = !plotLeftMouseDataControl;
+            formsPlotLeft.Configure(enablePanning: plotLeftMouseDataControl);
+        }
+
         /// <summary>
         /// Load spectra as if they were measured.
         /// Time is derived from file creation time.
@@ -648,7 +662,7 @@ namespace spectrometric_thermometer
 
             int vertical = this.Size.Height - constants.DefaultSize.Height;
             formsPlotLeft.Height = formsPlotRight.Height = constants.FormsPlotSize + vertical;
-
+            
             chBoxPlot.Enabled = this.Size != this.MinimumSize;
         }
 
@@ -659,6 +673,7 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void FormsPlotLeft_MouseClicked(object sender, MouseEventArgs e)
         {
+            if (plotLeftMouseDataControl) { return; }
             if (e.Button != MouseButtons.Left) { return; }
 
             double clickedWavelength = plotLeft.CoordinateFromPixelX(e.X);

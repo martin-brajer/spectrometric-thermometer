@@ -103,15 +103,18 @@ namespace spectrometric_thermometer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        protected virtual void OnDataReady()
+        public virtual void OnDataReady(bool reanalyze=false)
         {
-            intensitiesBuffer = SmoothPointPeaks(intensitiesBuffer);
-            intensitiesBuffer = SmoothBoxcar(intensitiesBuffer,
-                windowHalf: MParameters.SmoothingIntensities);
+            if (!reanalyze)
+            {
+                intensitiesBuffer = SmoothPointPeaks(intensitiesBuffer);
+                intensitiesBuffer = SmoothBoxcar(intensitiesBuffer,
+                    windowHalf: MParameters.SmoothingIntensities);
 
-            Intensities = SpectraLoaded == 1 ? intensitiesBuffer :
-                intensitiesBuffer.Select(item => item / SpectraLoaded).ToArray();
-            Time = new DateTime(timeBufferTicks / SpectraLoaded);
+                Intensities = SpectraLoaded == 1 ? intensitiesBuffer :
+                    intensitiesBuffer.Select(item => item / SpectraLoaded).ToArray();
+                Time = new DateTime(timeBufferTicks / SpectraLoaded);
+            }
             AbsorptionEdge = FindAbsorptionEdge();
             Temperature = Calibration?.Use(wavelength: AbsorptionEdge);
 
@@ -313,18 +316,6 @@ namespace spectrometric_thermometer
             }
         }
 
-        /// <summary>
-        /// Widens inteval given in parametrss by fitting a line there.
-        /// Continue as long as the fit is "good".
-        /// Set in config file: const_eps = 3.5.
-        /// 
-        /// Vit's variation.
-        /// </summary>
-        /// <param name="iLeft">Left-end index.</param>
-        /// <param name="iRight">Right-end index.</param>
-        /// <param name="goLeft">Widening of the interval direction. True means left.</param>
-        /// <returns>Fitting parameters.
-        /// The first one is intercept, the second is slope.</returns>
         private double[] InchwormVit(ref int iLeft, ref int iRight, bool goLeft)
         {
             // Make three points out of one, when iLeft = iRight.

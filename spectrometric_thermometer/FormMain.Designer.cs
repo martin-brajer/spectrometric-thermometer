@@ -93,6 +93,7 @@
             this.lineShapePlot = new Microsoft.VisualBasic.PowerPacks.LineShape();
             this.pnlPID = new System.Windows.Forms.Panel();
             this.pnlPlot = new System.Windows.Forms.Panel();
+            this.chkBoxPlotControl = new System.Windows.Forms.CheckBox();
             this.pnlMain.SuspendLayout();
             this.pnlTemp.SuspendLayout();
             this.pnlPID.SuspendLayout();
@@ -552,7 +553,7 @@
             // 
             this.coBoxCalibration.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.coBoxCalibration.FormattingEnabled = true;
-            this.coBoxCalibration.Location = new System.Drawing.Point(3, 112);
+            this.coBoxCalibration.Location = new System.Drawing.Point(3, 150);
             this.coBoxCalibration.Margin = new System.Windows.Forms.Padding(2);
             this.coBoxCalibration.Name = "coBoxCalibration";
             this.coBoxCalibration.Size = new System.Drawing.Size(100, 21);
@@ -561,11 +562,11 @@
             // 
             // btnPlotCalibration
             // 
-            this.btnPlotCalibration.Location = new System.Drawing.Point(3, 144);
+            this.btnPlotCalibration.Location = new System.Drawing.Point(3, 108);
             this.btnPlotCalibration.Name = "btnPlotCalibration";
             this.btnPlotCalibration.Size = new System.Drawing.Size(100, 30);
             this.btnPlotCalibration.TabIndex = 4;
-            this.btnPlotCalibration.Text = "Plot c&alibration";
+            this.btnPlotCalibration.Text = "C&alibration";
             this.btnPlotCalibration.UseVisualStyleBackColor = true;
             this.btnPlotCalibration.Click += new System.EventHandler(this.BtnPlotCalibration_Click);
             // 
@@ -730,13 +731,26 @@
             // pnlPlot
             // 
             this.pnlPlot.Controls.Add(this.lblPlot);
+            this.pnlPlot.Controls.Add(this.chkBoxPlotControl);
             this.pnlPlot.Controls.Add(this.chBoxPlot);
             this.pnlPlot.Location = new System.Drawing.Point(323, 168);
             this.pnlPlot.Name = "pnlPlot";
             this.pnlPlot.Size = new System.Drawing.Size(308, 54);
             this.pnlPlot.TabIndex = 20;
             // 
-            // Form_main
+            // chkBoxPlotControl
+            // 
+            this.chkBoxPlotControl.Appearance = System.Windows.Forms.Appearance.Button;
+            this.chkBoxPlotControl.Location = new System.Drawing.Point(6, 24);
+            this.chkBoxPlotControl.Name = "chkBoxPlotControl";
+            this.chkBoxPlotControl.Size = new System.Drawing.Size(100, 30);
+            this.chkBoxPlotControl.TabIndex = 5;
+            this.chkBoxPlotControl.Text = "Data c&ontrol";
+            this.chkBoxPlotControl.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.chkBoxPlotControl.UseVisualStyleBackColor = true;
+            this.chkBoxPlotControl.CheckedChanged += new System.EventHandler(this.ChkBoxPlotControl_CheckedChanged);
+            // 
+            // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -757,7 +771,7 @@
             this.Controls.Add(this.shapeContainer1);
             this.Margin = new System.Windows.Forms.Padding(2);
             this.MinimumSize = new System.Drawing.Size(652, 273);
-            this.Name = "Form_main";
+            this.Name = "FormMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Spectrometric Thermometer";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.FormMain_FormClosed);
@@ -841,6 +855,7 @@
         private Microsoft.VisualBasic.PowerPacks.LineShape lineShape4;
         private System.Windows.Forms.Panel pnlPID;
         private System.Windows.Forms.Panel pnlPlot;
+        internal System.Windows.Forms.CheckBox chkBoxPlotControl;
     }
 }
 
