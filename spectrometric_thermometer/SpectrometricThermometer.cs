@@ -227,7 +227,7 @@ namespace spectrometric_thermometer
         public bool BtnSaveTemperatures()
         {
             WriteColumns(
-                  Path.GetDirectoryName(mParameters.Filename) + "/TemperatureHistory.txt",
+                  Path.GetDirectoryName(mParameters.Filename) + "/TemperatureHistory.dat",
                   MTemperatureHistory.Times,
                   MTemperatureHistory.Temperatures);
             return true;

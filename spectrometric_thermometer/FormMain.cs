@@ -20,7 +20,7 @@ namespace spectrometric_thermometer
         /// <summary>
         /// 
         /// </summary>
-        private bool plotLeftMouseDataControl = false;
+        private bool plotLeftMouseDataControl;
 
         /// <summary>
         /// Connecting device phase.
@@ -145,7 +145,7 @@ namespace spectrometric_thermometer
 
             BtnDefaultSize_Click(this, EventArgs.Empty);
             this.CenterToScreen();
-            formsPlotLeft.Configure(enablePanning: plotLeftMouseDataControl);
+            ChkBoxPlotControl_CheckedChanged(this, EventArgs.Empty);
         }
 
         private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
@@ -473,8 +473,10 @@ namespace spectrometric_thermometer
 
         private void ChkBoxPlotControl_CheckedChanged(object sender, EventArgs e)
         {
-            plotLeftMouseDataControl = !plotLeftMouseDataControl;
-            formsPlotLeft.Configure(enablePanning: plotLeftMouseDataControl);
+            plotLeftMouseDataControl = chkBoxPlotControl.Checked;
+            formsPlotLeft.Configure(
+                enablePanning: !plotLeftMouseDataControl,
+                enableRightClickMenu: !plotLeftMouseDataControl);
         }
 
         /// <summary>
@@ -673,21 +675,20 @@ namespace spectrometric_thermometer
         /// <param name="e"></param>
         private void FormsPlotLeft_MouseClicked(object sender, MouseEventArgs e)
         {
-            if (plotLeftMouseDataControl) { return; }
-            if (e.Button != MouseButtons.Left) { return; }
+            if (!plotLeftMouseDataControl) { return; }
 
             double clickedWavelength = plotLeft.CoordinateFromPixelX(e.X);
-            if (ModifierKeys.HasFlag(Keys.Control))
+            if (e.Button == MouseButtons.Left)
+            {
+                My_msg(string.Format("Clicked: {0:0.0} nm", clickedWavelength));
+            }
+            else if (e.Button == MouseButtons.Right)
             {
                 // If clicked at app start.
                 if (spectrometricThermometer.MSpectraProcessor.Wavelengths == null) { return; }
 
                 PlotRightTitleTemperature = spectrometricThermometer.AnalyzeMeasurement(clickedWavelength);
                 Plot(spectrometricThermometer.MSpectraProcessor, spectrometricThermometer.MTemperatureHistory);
-            }
-            else
-            {
-                My_msg(string.Format("Clicked: {0:0.0} nm", clickedWavelength));
             }
         }
         

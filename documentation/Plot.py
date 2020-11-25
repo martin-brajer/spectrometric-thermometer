@@ -19,14 +19,14 @@ def main():
     center = 6
 
     # Curves
-    spectrum = gaussCurve(
-        amplitude=10, dispersionSquared=4, center=center, zero=2)
+    spectrum = gaussian_curve_factory(
+        amplitude=10, variance=np.sqrt(2), expectedValue=center, zero=2)
     left = Line(constant=1.8, slope=0.1)
     right = Line(constant=-10.3, slope=4.0)
     intersection = Line.Intersection(left, right)
 
     # Plot
-    plt.figure('FitGraphics')
+    plt.figure('SpectraProcessor.FitGraphics')
 
     x = np.linspace(xMin, 8, num=1000)
     plt.plot(x, spectrum(x), 'r-')
@@ -53,19 +53,47 @@ def main():
     plt.show()
 
 
-def gaussCurve(amplitude, dispersionSquared, center, zero):
-    """ Return Gauss curve function of given parameters. """
-    return lambda x: amplitude * np.exp(-((x - center)**2) / dispersionSquared) + zero
+def gaussian_curve_factory(amplitude, variance, expectedValue, zero):
+    """ Create gauss curve function of given parameters.
+
+    :param float amplitude: amplitude
+    :param float variance: width (kind of)
+    :param float expectedValue: center
+    :param float zero: baseline
+    :return: gaussian curve as a function of one free variable
+    :rtype: function
+    """
+    def gaussian_curve(x):
+        """ Fixed gauss curve.
+
+        :param x: free variable
+        :type x: np.array or float
+        :return: function value
+        :rtype: np.array or float
+        """
+        return amplitude * np.exp(-((x - expectedValue)**2) / (2 * variance**2)) + zero
+    return gaussian_curve
 
 
 def dashed(x, func, xMax=None, yMax=None, xText=None, yText=None):
-    """ Plot cross at (x, func(x)). Dotted vertical and horizontal line to plot axis.
+    """ Draw "X" at coordinates (x, func(x)), then draw dotted vertical and horizontal
+    lines connecting the "X" to the axes.
 
-    Optional parameters:\n
-      xMax, yMax: Dotted lines extension up to given limit.\n
-      xText, yText: Annotation near the given axis.
+    :param float x: free variable value
+    :param func: function or function value
+    :type func: function or float
+    :param float xMax: horizontal dotted line is extended to this limit
+    :param float yMax: vertical dotted line is extended to this limit
+    :param str xText: annotation at the vertical dotted line near the x-axis
+    :param str yText: annotation at the horizontal dotted line near the y-axis
     """
-    y = func(x)
+    xShift, yShift = 0.1, 0.2  # Annotation relative position
+
+    if callable(func):
+        y = func(x)
+    else:
+        y = func
+
     if yMax is None:
         yMax = y
     if xMax is None:
@@ -75,7 +103,6 @@ def dashed(x, func, xMax=None, yMax=None, xText=None, yText=None):
     plt.plot([x], [y], 'kX')  # Intersection
 
     ax = plt.gca()
-    xShift, yShift = 0.1, 0.2
     if xText is not None:
         ax.annotate(xText, xy=(xMax + xShift, yShift))
     if yText is not None:
@@ -86,7 +113,7 @@ def dashed(x, func, xMax=None, yMax=None, xText=None, yText=None):
 
 
 class Line():
-    """ Represents line function. """
+    """ Represents a line function. """
 
     def __init__(self, constant, slope):
         self.constant = constant
@@ -97,7 +124,7 @@ class Line():
         return self.slope * x + self.constant
 
     def inverse(self, y):
-        """ Find inversion function values. """
+        """ Find inverse function values. """
         return (y - self.constant) / self.slope
 
     def __str__(self):
@@ -111,7 +138,7 @@ class Line():
 
     @staticmethod
     def Intersection(line1, line2):
-        """ Return Tuple(x, y) of coordinates of intersection point of the two Lines. """
+        """ Return coordinates Tuple(x, y) of intersection point of the two Lines. """
         x = Line._XIntersection(line1, line2)
         return (x, line1(x))
 

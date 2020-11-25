@@ -199,7 +199,7 @@
             this.lblAverage.TabIndex = 9;
             this.lblAverage.Text = "Average";
             this.lblAverage.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.toolTip1.SetToolTip(this.lblAverage, "Number of periods to average");
+            this.toolTip1.SetToolTip(this.lblAverage, "Number of periods to be averaged");
             // 
             // tBoxFilename
             // 
@@ -503,7 +503,7 @@
             this.btnDefaultSize.Size = new System.Drawing.Size(100, 30);
             this.btnDefaultSize.TabIndex = 3;
             this.btnDefaultSize.Text = "&Default size";
-            this.toolTip1.SetToolTip(this.btnDefaultSize, "Ctrl to shrink");
+            this.toolTip1.SetToolTip(this.btnDefaultSize, "Ctrl-click to shrink");
             this.btnDefaultSize.UseVisualStyleBackColor = true;
             this.btnDefaultSize.Click += new System.EventHandler(this.BtnDefaultSize_Click);
             // 
@@ -526,6 +526,7 @@
             this.btnSaveTemperatures.Size = new System.Drawing.Size(100, 30);
             this.btnSaveTemperatures.TabIndex = 0;
             this.btnSaveTemperatures.Text = "&Save temps";
+            this.toolTip1.SetToolTip(this.btnSaveTemperatures, "Save as \"TemperatureHistory.dat\"");
             this.btnSaveTemperatures.UseVisualStyleBackColor = true;
             this.btnSaveTemperatures.Click += new System.EventHandler(this.BtnSaveTemperatures_Click);
             // 
@@ -546,6 +547,7 @@
             this.btnClear.Size = new System.Drawing.Size(100, 30);
             this.btnClear.TabIndex = 2;
             this.btnClear.Text = "&Clear";
+            this.toolTip1.SetToolTip(this.btnClear, "Clear plots and temperature history");
             this.btnClear.UseVisualStyleBackColor = true;
             this.btnClear.Click += new System.EventHandler(this.BtnClear_Click);
             // 
@@ -558,6 +560,7 @@
             this.coBoxCalibration.Name = "coBoxCalibration";
             this.coBoxCalibration.Size = new System.Drawing.Size(100, 21);
             this.coBoxCalibration.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.coBoxCalibration, "Calibration");
             this.coBoxCalibration.SelectedIndexChanged += new System.EventHandler(this.CBoxCalibration_SelectedIndexChanged);
             // 
             // btnPlotCalibration
@@ -567,6 +570,7 @@
             this.btnPlotCalibration.Size = new System.Drawing.Size(100, 30);
             this.btnPlotCalibration.TabIndex = 4;
             this.btnPlotCalibration.Text = "C&alibration";
+            this.toolTip1.SetToolTip(this.btnPlotCalibration, "Plot selected calibration");
             this.btnPlotCalibration.UseVisualStyleBackColor = true;
             this.btnPlotCalibration.Click += new System.EventHandler(this.BtnPlotCalibration_Click);
             // 
@@ -747,6 +751,7 @@
             this.chkBoxPlotControl.TabIndex = 5;
             this.chkBoxPlotControl.Text = "Data c&ontrol";
             this.chkBoxPlotControl.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.toolTip1.SetToolTip(this.chkBoxPlotControl, "Control plot or data");
             this.chkBoxPlotControl.UseVisualStyleBackColor = true;
             this.chkBoxPlotControl.CheckedChanged += new System.EventHandler(this.ChkBoxPlotControl_CheckedChanged);
             // 
