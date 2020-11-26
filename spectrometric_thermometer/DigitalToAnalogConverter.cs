@@ -156,7 +156,7 @@ namespace spectrometric_thermometer
                     }
                     catch (UnauthorizedAccessException)
                     {
-                        failMessage += "\r\n  " + portName + " access denied.";
+                        failMessage += string.Format("\r\n  {0} access denied.", portName);
                         continue;
                     }
 
@@ -241,14 +241,15 @@ namespace spectrometric_thermometer
                         if (int.TryParse(splitted[3], out int V))
                             V1 = B2V(V);
                         else
-                            throw new FormatException("Error in 'int.TryParse(splitted[3]'.");
+                            throw new FormatException("Error in 'int.TryParse(splitted[3])'.");
                         if (int.TryParse(splitted[4], out V))
                             V2 = B2V(V);
                         else
-                            throw new FormatException("Error in 'int.TryParse(splitted[4]'.");
+                            throw new FormatException("Error in 'int.TryParse(splitted[4])'.");
                     }
                     else
-                        throw new ApplicationException(string.Format("DAC read error. Wrong length of splitted var ({0})", splitted.Length));
+                        throw new ApplicationException(string.Format(
+                            "DAC read error. Wrong length of splitted var ({0})", splitted.Length));
                 }
                 else
                     throw new ApplicationException("DAC read error. Null or empty reply string.");
@@ -342,7 +343,7 @@ namespace spectrometric_thermometer
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    failMessage += "\r\n  " + portName + " access denied.";
+                    failMessage += string.Format("\r\n {0} access denied.", portName);
                     continue;
                 }
 

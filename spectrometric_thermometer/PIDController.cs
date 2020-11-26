@@ -72,33 +72,33 @@ namespace spectrometric_thermometer
             string bufferLength)
         {
             if (!double.TryParse(sP, out P))
-                throw new ArgumentException("P const error!" + " Converted value: " + P + ".");
+                throw new ArgumentException(string.Format("P const error! Converted value: {0}.", P));
             if (P <= 0)
-                throw new ArgumentException("P const error!" + " Must be positive");
+                throw new ArgumentException("P const error! Must be positive");
             P = 1 / P;
 
             if (!double.TryParse(sI, out I))
-                throw new ArgumentException("I const error!" + " Converted value: " + I + ".");
+                throw new ArgumentException(string.Format("I const error! Converted value: {0}.", I));
             if (I < 0)
-                throw new ArgumentException("I const error!" + " Must not be negative");
+                throw new ArgumentException("I const error! Must not be negative");
             if (I != 0)
                 I = P / I;
 
             if (!double.TryParse(sD, out D))
-                throw new ArgumentException("D const error!" + " Converted value: " + D + ".");
+                throw new ArgumentException(string.Format("D const error! Converted value: {0}.", D));
             if (D < 0)
-                throw new ArgumentException("D const error!" + " Must not be negative");
+                throw new ArgumentException("D const error! Must not be negative");
             D = P * D;
 
             if (!double.TryParse(sSetPoint, out setPoint))
-                throw new ArgumentException("Set point error!" + " Converted value: " + setPoint + ".");
+                throw new ArgumentException(string.Format("Set point error! Converted value: {0}.", setPoint));
 
             if (!double.TryParse(sRamp, out ramp))
-                throw new ArgumentException("Ramp error!" + " Converted value: " + ramp + ".");
+                throw new ArgumentException(string.Format("Ramp error! Converted value: {0}.", ramp));
 
             if (!double.TryParse(vDeltaAbsMax, out double delta))
             {
-                throw new ArgumentException("vDeltaAbsMax error!" + " Converted value: " + ramp + ".");
+                throw new ArgumentException(string.Format("vDeltaAbsMax error! Converted value: {0}.", ramp));
             }
             else
             {
@@ -107,7 +107,7 @@ namespace spectrometric_thermometer
 
             if (!int.TryParse(bufferLength, out int bLen))
             {
-                throw new ArgumentException("Buffer length error!" + " Converted value: " + ramp + ".");
+                throw new ArgumentException(string.Format("Buffer length error! Converted value: {0}.", ramp));
             }
             else
             {

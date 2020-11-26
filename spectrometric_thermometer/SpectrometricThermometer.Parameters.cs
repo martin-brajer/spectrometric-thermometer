@@ -75,7 +75,8 @@ namespace spectrometric_thermometer
                 }
                 else
                 {
-                    string filenameIndexText = FilenameIndex.ToString("D" + FilenameIndexLength);
+                    string filenameIndexText = FilenameIndex.ToString(
+                        string.Format("D{0}", FilenameIndexLength));
 
                     if (IsAllNines(filenameIndexText))
                     {
@@ -128,28 +129,32 @@ namespace spectrometric_thermometer
                 {
                     if (!int.TryParse(filenameIndex, out filenameIndexInt))
                     {
-                        throw new ArgumentException("Numbering error!" + " Converted value: " + filenameIndexInt + ".");
+                        throw new ArgumentException(string.Format(
+                            "Numbering error! Converted value: {0}.", filenameIndexInt));
                     }
                 }
                 int filenameIndexLength = filenameIndex.Length;
 
                 if (!float.TryParse(periodLength, out float periodLengthFloat))
                 {
-                    throw new ArgumentException("Period error!" + " Converted value: " + periodLengthFloat + ".");
+                    throw new ArgumentException(string.Format(
+                        "Period error! Converted value: {0}.", periodLengthFloat));
                 }
 
                 if (!int.TryParse(average, out int averageInt))
                 {
-                    throw new ArgumentException("Average error!" + " Converted value: " + average + ".");
+                    throw new ArgumentException(string.Format(
+                        "Average error! Converted value: {0}.", average));
                 }
                 if (averageInt < 1)
                 {
-                    throw new ArgumentException("Average error!" + " Must be positive.");
+                    throw new ArgumentException("Average error! Must be positive.");
                 }
 
                 if (!float.TryParse(exposureTime, out float exposureTimeFloat))
                 {
-                    throw new ArgumentException("Exposure time error!" + " Converted value: " + exposureTime + ".");
+                    throw new ArgumentException(string.Format(
+                        "Exposure time error! Converted value: {0}.", exposureTime));
                 }
 
                 // "adaptation" cannot be wrong.

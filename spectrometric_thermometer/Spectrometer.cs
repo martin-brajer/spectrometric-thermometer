@@ -126,7 +126,8 @@ namespace spectrometric_thermometer
         /// Select one of the found spectrometers.
         /// Overload with int parameter.
         /// </summary>
-        /// <exception cref="IndexOutOfRangeException">Param index greater than number of devices found.</exception>
+        /// <exception cref="IndexOutOfRangeException">Param index greater
+        /// than number of devices found.</exception>
         /// <param name="index">Index of the array.</param>
         public abstract void SelectDevice(int index);
         /// <summary>
@@ -306,8 +307,8 @@ namespace spectrometric_thermometer
                     // Verify whether the needed library exists.
                     if (!File.Exists(dll))
                     {
-                        // Not found.
-                        throw new DllNotFoundException("File '" + dll + "' not found!");
+                        throw new DllNotFoundException(string.Format(
+                            "File '{0}' not found!", dll));
                     }
                 }
 

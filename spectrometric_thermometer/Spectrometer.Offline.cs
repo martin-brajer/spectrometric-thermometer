@@ -111,7 +111,7 @@ namespace spectrometric_thermometer
 
             public override void SearchDevices()
             {
-                NumberOfDevicesFound = 2;
+                NumberOfDevicesFound = 1;
             }
 
             public override void SelectDevice(int index)
@@ -135,7 +135,7 @@ namespace spectrometric_thermometer
 
             public override string Status()
             {
-                return "Test " + selected.ToString();
+                return string.Format("Test {0}", selected);
             }
 
             public override bool StatusIsTakingSpectrum()

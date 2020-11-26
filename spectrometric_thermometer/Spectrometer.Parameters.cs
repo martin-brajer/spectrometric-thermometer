@@ -36,13 +36,13 @@ namespace spectrometric_thermometer
                 // Spectrometer bounds.
                 if (exposureTime < spectrometer.MinExposureTime)
                 {
-                    throw new ArgumentException(
-                        "Minimal exposure time is " + spectrometer.MinExposureTime.ToString());
+                    throw new ArgumentException(string.Format(
+                        "Minimal exposure time is {0}.", spectrometer.MinExposureTime));
                 }
                 if (exposureTime > spectrometer.MaxExposureTime)
                 {
-                    throw new ArgumentException(
-                        "Maximal exposure time is " + spectrometer.MaxExposureTime.ToString());
+                    throw new ArgumentException(string.Format(
+                        "Maximal exposure time is {0}.", spectrometer.MaxExposureTime));
                 }
                 
                 return new Parameters(periodLength: periodLength, exposureTime: exposureTime,

@@ -217,7 +217,8 @@ namespace spectrometric_thermometer
                 for (int deviceIndex = 0; deviceIndex < Spectrometer.NumberOfDevicesFound; deviceIndex++)
                 {
                     Spectrometer.SelectDevice(deviceIndex);
-                    Front.My_msg("  " + deviceIndex + "... " + Spectrometer.ModelName + " : " + Spectrometer.SerialNo);
+                    Front.My_msg(string.Format("  {0}... {1} : {2}", deviceIndex,
+                        Spectrometer.ModelName, Spectrometer.SerialNo));
                 }
                 Spectrometer.SelectDevice();
             }
@@ -227,9 +228,11 @@ namespace spectrometric_thermometer
         public bool BtnSaveTemperatures()
         {
             WriteColumns(
-                  Path.GetDirectoryName(mParameters.Filename) + "/TemperatureHistory.dat",
-                  MTemperatureHistory.Times,
-                  MTemperatureHistory.Temperatures);
+                  filename: Path.Combine(
+                      Path.GetDirectoryName(mParameters.Filename),
+                      "TemperatureHistory.dat"),
+                  col1: MTemperatureHistory.Times,
+                  col2: MTemperatureHistory.Temperatures);
             return true;
         }
 
@@ -247,13 +250,14 @@ namespace spectrometric_thermometer
             }
             catch (IndexOutOfRangeException ex)
             {
-                Front.My_msg("Out of range: " + ex.Message);
+                Front.My_msg(string.Format("Out of range: {0}.", ex.Message));
                 return false;
             }
 
             Spectrometer.EraceDeviceList();
             Spectrometer.Open();
-            Front.My_msg("Openning " + Spectrometer.ModelName + " : " + Spectrometer.SerialNo);
+            Front.My_msg(string.Format(
+                "Openning {0} : {1}", Spectrometer.ModelName, Spectrometer.SerialNo));
             return true;
         }
 
@@ -481,6 +485,7 @@ namespace spectrometric_thermometer
                                     break;
                                 default:
                                     MSpectraProcessor.MParameters.InchwormMethodLeft = SpectraProcessor.InchwormMethod.Constant;
+                                    Front.My_msg("Wrong inchwormMethod_left, default choosen!");
                                     break;
                             }
                         break;
@@ -498,6 +503,7 @@ namespace spectrometric_thermometer
                                 break;
                             default:
                                 MSpectraProcessor.MParameters.InchwormMethodRight = SpectraProcessor.InchwormMethod.Constant;
+                                Front.My_msg("Wrong inchwormMethod_right, default choosen!");
                                 break;
                         }
                         break;
@@ -671,7 +677,7 @@ namespace spectrometric_thermometer
                         var a = DAC.GetV();
                         Front.My_msg("XX  P" + percent + "  DL" + DAC.LastWrittenValue + "  a0" + a[0] + "  a1" + a[1]);  // Analyze. DELETE!!!
 
-                        Front.My_msg("Set Eurotherm to Manual / " + percent.ToString("F1") + " %.");
+                        Front.My_msg(string.Format("Set Eurotherm to Manual / {0:F1} %.", percent));
                         LED(LEDcolour.Red);
                     }
                     timerSwitch.Start();
@@ -758,7 +764,7 @@ namespace spectrometric_thermometer
             bool removed = Spectrometer.CheckDeviceRemoved();
             if (removed)
             {
-                Front.My_msg("Spectrometer status: " + Spectrometer.Status());
+                Front.My_msg(string.Format("Spectrometer status: {0}", Spectrometer.Status()));
                 Front.Disconnect();
             }
             return removed;
@@ -808,7 +814,7 @@ namespace spectrometric_thermometer
                 string fileNameIndexText = mParameters.FilenameIndexText();
                 Front.FilenameIndex = fileNameIndexText;
                 WriteColumns(
-                    filename: mParameters.Filename + fileNameIndexText + ".dat",
+                    filename: string.Format("{0}{1}.dat", mParameters.Filename, fileNameIndexText),
                     col1: MSpectraProcessor.Wavelengths,
                     col2: MSpectraProcessor.Intensities);
             }
