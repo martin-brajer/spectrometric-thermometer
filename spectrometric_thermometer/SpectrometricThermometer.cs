@@ -14,11 +14,6 @@ namespace spectrometric_thermometer
         /// Start spectrometer exposure.
         /// </summary>
         public Timer timerMeasure = new Timer();
-
-        /// <summary>
-        /// Delimiter used in WriteColumns() and ConfigurationFileLoad().
-        /// </summary>
-        private readonly string delimiter = "    ";
         private readonly Back2Front Front = null;
 
         /// <summary>
@@ -321,7 +316,7 @@ namespace spectrometric_thermometer
         /// </summary>
         public bool ConfigurationFile_Load()
         {
-            Regex regex = new Regex(delimiter);
+            Regex regex = new Regex(mParameters.Delimiter);
             string[] lines = File.ReadAllLines("Config.cfg");
 
             Calibrations.Clear();
@@ -569,8 +564,9 @@ namespace spectrometric_thermometer
         public Tuple<double[], double[]> LoadData(string filename, string delimiter = null)
         {
             if (delimiter == null)
-                delimiter = this.delimiter;
-
+            {
+                delimiter = mParameters.Delimiter;
+            }
             string[] lines = File.ReadAllLines(filename);
             // SpectraSuite Data File recognize.
             if (lines.Length > 0 && lines[0] == "SpectraSuite Data File")
@@ -706,17 +702,20 @@ namespace spectrometric_thermometer
         /// <param name="col2"></param>
         public void WriteColumns(string filename, double[] col1, double[] col2)
         {
-            // Prepare the string array to be written.
-            int lines = col1.Length;
-            string[] mWrite = new string[lines];
-            for (int i = 0; (i <= (lines - 1)); i++)
+            if (col1.Length != col2.Length)
             {
-                mWrite[i] = col1[i]
-                    + delimiter + col2[i];
+                throw new ArgumentException();
+            }
+            int length = col1.Length;
+
+            string[] lines = new string[length];
+            for (int i = 0; i < length; i++)
+            {
+                lines[i] = string.Format(
+                    "{0}{1}{2}", col1[i], mParameters.Delimiter, col2[i]);
             }
 
-            // Actually write wavelenghts and intensities to a "*.dat" file.
-            File.WriteAllLines(filename, mWrite);
+            File.WriteAllLines(filename, lines);
         }
 
         /// <summary>

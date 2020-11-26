@@ -19,6 +19,7 @@ namespace spectrometric_thermometer
             /// First line printed in <see cref="tBoxLog"/> at program start.
             /// </summary>
             public string InitialMessage => string.Format(_initialMessage, Version);
+            public string Delimiter { get; }
             public string HelpFileName { get; }
             // Button labels.
             public string[] BtnInitializeText { get; }
@@ -47,6 +48,7 @@ namespace spectrometric_thermometer
             private Constants()
             {
                 Version = "3.5";
+                Delimiter = "    ";
                 DefaultSize = new Size(width: 929, height: 738);
                 FormsPlotSize = 446;
             }

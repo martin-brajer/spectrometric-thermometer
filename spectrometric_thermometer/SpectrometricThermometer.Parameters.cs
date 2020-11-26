@@ -23,7 +23,8 @@ namespace spectrometric_thermometer
                 average: 1,
                 exposureTime: 1f,
                 adaptation: false,
-                filename: "Spectrum")
+                filename: "Spectrum",
+                delimiter: "    ")
             { }
 
             /// <summary>
@@ -40,7 +41,7 @@ namespace spectrometric_thermometer
             /// <param name="filename"></param>
             public Parameters(bool save, bool rewrite, int filenameIndex,
                 int filenameIndexLength, float periodLength, int average,
-                float exposureTime, bool adaptation, string filename)
+                float exposureTime, bool adaptation, string filename, string delimiter)
             {
                 Save = save;
                 Rewrite = rewrite;
@@ -51,6 +52,7 @@ namespace spectrometric_thermometer
                 ExposureTime = exposureTime;
                 AutoExposureTime = adaptation;
                 Filename = filename ?? throw new ArgumentNullException(nameof(filename));
+                Delimiter = delimiter;
             }
 
             public bool Save { get; set; }
@@ -62,6 +64,7 @@ namespace spectrometric_thermometer
             public float ExposureTime { get; set; }
             public bool AutoExposureTime { get; set; }
             public string Filename { get; set; }
+            public string Delimiter { get; set; }
 
             /// <summary>
             /// Handle file numbering. If enabled, add one to index.
@@ -119,7 +122,8 @@ namespace spectrometric_thermometer
                 string average = "1",
                 string exposureTime = "1",
                 bool adaptation = false,
-                string filename = "Spectrum")
+                string filename = "Spectrum",
+                string delimiter = "    ")
             {
                 // "save" cannot be wrong.
                 // "rewrite" cannot be wrong.
@@ -171,7 +175,7 @@ namespace spectrometric_thermometer
 
                 return Parse(save, rewrite, filenameIndexInt,
                     filenameIndexLength, periodLengthFloat, averageInt,
-                    exposureTimeFloat, adaptation, filename);
+                    exposureTimeFloat, adaptation, filename, delimiter);
             }
 
             public static Parameters Parse(
@@ -183,7 +187,8 @@ namespace spectrometric_thermometer
                 int average = 1,
                 float exposureTime = 1,
                 bool adaptation = false,
-                string filename = "Spectrum")
+                string filename = "Spectrum",
+                string delimiter = "    ")
             {
                 if (periodLength < exposureTime)
                 {
@@ -192,7 +197,7 @@ namespace spectrometric_thermometer
 
                 return new Parameters(save, rewrite, filenameIndex,
                     filenameIndexLength, periodLength, average,
-                    exposureTime, adaptation, filename);
+                    exposureTime, adaptation, filename, delimiter);
             }
 
             /// <summary>

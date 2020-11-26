@@ -262,7 +262,8 @@ namespace spectrometric_thermometer
                             average: tBoxAverage.Text,
                             exposureTime: tBoxExposureTime.Text,
                             adaptation: chBoxAutoExposureTime.Checked,
-                            filename: tBoxFilename.Text);
+                            filename: tBoxFilename.Text,
+                            delimiter: constants.Delimiter);
                     }
                     catch (ArgumentException ex)
                     {
